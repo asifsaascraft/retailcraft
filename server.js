@@ -8,7 +8,7 @@ import cookieParser from "cookie-parser";
 import connectDB from "./config/db.js";
 
 // Routes
-//import adminRoutes from "./routes/adminRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 //import userRoutes from "./routes/userRoutes.js";
 
 const app = express();
@@ -61,7 +61,7 @@ app.get("/", (req, res) => {
 // =======================
 // API Routes
 // =======================
-//app.use("/api/admin", adminRoutes);
+app.use("/api/admin", adminRoutes);
 //app.use("/api/users", userRoutes);
 
 
