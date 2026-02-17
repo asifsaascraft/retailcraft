@@ -184,9 +184,10 @@ export const updateUser = async (req, res) => {
       name: user.name,
       templateKey: "2518b.554b0da719bc314.k1.2a210f00-0b43-11f1-84b6-cabf48e1bf81.19c66d663f0",
       mergeInfo: {
-        name,
-        email,
+        name: user.name,
+        email: user.email,
       },
+
     });
 
     const safeUser = await User.findById(user._id).select(
