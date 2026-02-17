@@ -9,9 +9,10 @@ import connectDB from "./config/db.js";
 
 // Routes
 import adminRoutes from "./routes/adminRoutes.js";
+import userAuthRoutes from "./routes/userAuthRoutes.js";
 import branchRoutes from "./routes/branchRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
-import userAuthRoutes from "./routes/userAuthRoutes.js";
+
 
 const app = express();
 
@@ -64,9 +65,9 @@ app.get("/", (req, res) => {
 // API Routes
 // =======================
 app.use("/api/admin", adminRoutes);
+app.use("/api/users", userAuthRoutes);
 app.use("/api/branches", branchRoutes);
 app.use("/api", userRoutes);
-app.use("/api/users", userAuthRoutes);
 
 // =======================
 // Start Server SAFELY
