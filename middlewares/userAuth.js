@@ -1,9 +1,8 @@
-// middlewares/exhibitorAuthMiddleware.js
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
-// 🔐 Protect routes for Admin
-export const protectAdmin = async (req, res, next) => {
+// 🔐 Protect routes for User
+export const protectUser = async (req, res, next) => {
   let token;
 
   try {
@@ -16,15 +15,15 @@ export const protectAdmin = async (req, res, next) => {
     }
 
     if (!token) {
-      return res
-        .status(401)
-        .json({ message: "Not authorized, no token provided" });
+      return res.status(401).json({
+        message: "Not authorized, no token provided",
+      });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const user = await User.findById(decoded.id).select("-password");
-    if (!admin) {
+    if (!user) {
       return res.status(401).json({ message: "User not found" });
     }
 
