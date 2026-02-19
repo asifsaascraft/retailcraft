@@ -355,7 +355,7 @@ export const forgotUserPassword = async (req, res) => {
 
     await user.save({ validateBeforeSave: false });
 
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${token}`;
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${token}?type=user`;
 
     await sendEmailWithTemplate({
       to: user.email,

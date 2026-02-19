@@ -120,7 +120,7 @@ export const forgotPassword = async (req, res) => {
 
     await admin.save({ validateBeforeSave: false });
 
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${token}`;
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${token}?type=admin`;
 
     await sendEmailWithTemplate({
       to: admin.email,

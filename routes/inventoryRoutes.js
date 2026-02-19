@@ -67,41 +67,27 @@ router.get("/low-stock", getLowStock);
 
 
 /*
-=========================================================
 POST /add
-Add stock to product size
+Add stock to product
 
-Purpose:
-- Used when purchasing new items
-- Increase stock quantity
-
-Body Example:
+Body:
 {
  productId,
- size,
  quantity
 }
-=========================================================
 */
 router.post("/add", addStock);
 
 
 /*
-=========================================================
 POST /reduce
-Reduce stock from product size
+Reduce stock
 
-Purpose:
-- Used when selling product
-- Decrease stock quantity
-
-Body Example:
+Body:
 {
  productId,
- size,
  quantity
 }
-=========================================================
 */
 router.post("/reduce", reduceStock);
 

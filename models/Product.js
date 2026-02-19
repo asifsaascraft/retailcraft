@@ -31,13 +31,23 @@ const ProductSchema = new mongoose.Schema(
       trim: true,
     },
 
-    sizes: [
-      {
-        type: String,
-        enum: ["S", "M", "L", "XL", "XXL"],
-        required: true,
-      },
-    ],
+    color: {
+      type: String,
+      required: [true, "Color is required"],
+      trim: true,
+    },
+
+    size: {
+      type: String,
+      enum: ["S", "M", "L", "XL", "XXL"],
+      required: [true, "Size is required"],
+    },
+
+    quantity: {
+      type: Number,
+      default: 0,
+      min: [0, "Quantity cannot be negative"],
+    },
 
     hsnCode: {
       type: String,
@@ -69,15 +79,28 @@ const ProductSchema = new mongoose.Schema(
       type: Number,
       required: [true, "Purchase Price is required"],
     },
+
+    status: {
+      type: String,
+      enum: ["Active", "Inactive"],
+      default: "Active",
+      required: true,
+    },
   },
   { timestamps: true }
 );
 
-//  Barcode unique per branch
+
+// INDEXES (UNCHANGED)
 ProductSchema.index(
   { branchId: 1, barCode: 1 },
   { unique: true }
 );
 
+ProductSchema.index(
+  { branchId: 1, productName: 1, color: 1, size: 1 },
+  { unique: true }
+);
+
 export default mongoose.models.Product ||
-  mongoose.model("Product", ProductSchema);
+mongoose.model("Product", ProductSchema);
