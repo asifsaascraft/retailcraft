@@ -17,7 +17,7 @@ router.use(protectUser);
 // Create
 router.post("/", createProduct);
 
-// Get all
+// Get all by branch
 router.get("/", getProducts);
 
 // Get single

@@ -8,6 +8,12 @@ const ProductSchema = new mongoose.Schema(
       required: true,
     },
 
+    branchId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Branch",
+      required: true,
+    },
+
     productName: {
       type: String,
       required: [true, "Product name is required"],
@@ -25,11 +31,13 @@ const ProductSchema = new mongoose.Schema(
       trim: true,
     },
 
-    unit: {
-      type: Number,
-      required: [true, "Unit is required"],
-      trim: true,
-    },
+    sizes: [
+      {
+        type: String,
+        enum: ["S", "M", "L", "XL", "XXL"],
+        required: true,
+      },
+    ],
 
     hsnCode: {
       type: String,
@@ -63,6 +71,12 @@ const ProductSchema = new mongoose.Schema(
     },
   },
   { timestamps: true }
+);
+
+//  Barcode unique per branch
+ProductSchema.index(
+  { branchId: 1, barCode: 1 },
+  { unique: true }
 );
 
 export default mongoose.models.Product ||

@@ -39,6 +39,7 @@ const BranchSchema = new mongoose.Schema(
     branchCode: {
       type: String,
       required: [true, "Branch code is required"],
+      unique: true,
       trim: true,
     },
     branchGstNumber: {
