@@ -24,6 +24,12 @@ Branch is automatically detected from logged-in user
 
 router.use(protectUser);
 
+// Stock
+router.post("/add-stock", addStock);
+router.post("/reduce-stock", reduceStock);
+router.get("/low-stock", getLowStock);
+router.get("/stock-summary", getStockSummary);
+
 /*
 GET /products
 Default → Active products
@@ -39,10 +45,6 @@ router.put("/:id", updateProduct);
 router.delete("/:id", deleteProduct);
 
 
-// Stock
-router.post("/add-stock", addStock);
-router.post("/reduce-stock", reduceStock);
-router.get("/low-stock", getLowStock);
-router.get("/stock-summary", getStockSummary);
+
 
 export default router;

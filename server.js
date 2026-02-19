@@ -13,7 +13,6 @@ import userAuthRoutes from "./routes/userAuthRoutes.js";
 import branchRoutes from "./routes/branchRoutes.js";
 import customerRoutes from "./routes/customerRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
-import inventoryRoutes from "./routes/inventoryRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 
 
@@ -72,7 +71,6 @@ app.use("/api/users", userAuthRoutes);
 app.use("/api/branches", branchRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/products", productRoutes);
-app.use("/api/stocks", inventoryRoutes);
 
 app.use("/api", userRoutes);
 
