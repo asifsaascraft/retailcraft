@@ -99,13 +99,14 @@ export const getProducts = async (req, res) => {
 
 
 /* ======================================================
-   Get Single Product
+   Get Single Product (Branch Based)
 ====================================================== */
 export const getProductById = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user._id;
+    const branchId = req.user.branchId;
 
+    // Validate Mongo ID
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
@@ -113,7 +114,11 @@ export const getProductById = async (req, res) => {
       });
     }
 
-    const product = await Product.findOne({ _id: id, userId });
+    // Find product by branchId (NOT userId)
+    const product = await Product.findOne({
+      _id: id,
+      branchId,
+    });
 
     if (!product) {
       return res.status(404).json({
@@ -126,6 +131,7 @@ export const getProductById = async (req, res) => {
       success: true,
       data: product,
     });
+
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -134,14 +140,16 @@ export const getProductById = async (req, res) => {
   }
 };
 
+
 /* ======================================================
-   Update Product
+   Update Product (Branch Based)
 ====================================================== */
 export const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user._id;
+    const branchId = req.user.branchId;
 
+    // Validate Mongo ID
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
@@ -149,7 +157,11 @@ export const updateProduct = async (req, res) => {
       });
     }
 
-    const product = await Product.findOne({ _id: id, userId });
+    // Find product by branch
+    const product = await Product.findOne({
+      _id: id,
+      branchId,
+    });
 
     if (!product) {
       return res.status(404).json({
@@ -158,6 +170,11 @@ export const updateProduct = async (req, res) => {
       });
     }
 
+    // Prevent changing branchId & userId
+    delete req.body.branchId;
+    delete req.body.userId;
+
+    // Update fields
     Object.assign(product, req.body);
 
     await product.save();
@@ -167,10 +184,12 @@ export const updateProduct = async (req, res) => {
       message: "Product updated successfully",
       data: product,
     });
+
   } catch (error) {
     handleValidationError(error, res);
   }
 };
+
 
 /* ======================================================
    Delete Product
