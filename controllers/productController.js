@@ -23,7 +23,7 @@ const handleValidationError = (error, res) => {
     return res.status(400).json({
       success: false,
       message:
-        "Product already exists with same barcode or size/color combination",
+        "Product already exists with same barcode",
     });
   }
 
@@ -39,18 +39,41 @@ const handleValidationError = (error, res) => {
    Create Product (same logic, quantity auto)
 ====================================================== */
 export const createProduct = async (req, res) => {
-
   try {
 
     const userId = req.user._id;
     const branchId = req.user.branchId;
 
-    const { size, color, status } = req.body;
+    const {
+      productName,
+      itemCode,
+      barCode,
+      color,
+      size,
+      quantity,
+      hsnCode,
+      salesTax,
+      shortDescription,
+      b2bSalePrice,
+      b2cSalePrice,
+      purchasePrice,
+      status
+    } = req.body;
 
-    if (!size)
+    /* =============================
+       REQUIRED FIELD VALIDATION
+    ============================== */
+
+    if (!productName)
       return res.status(400).json({
         success: false,
-        message: "Size is required",
+        message: "Product name is required",
+      });
+
+    if (!barCode)
+      return res.status(400).json({
+        success: false,
+        message: "Barcode is required",
       });
 
     if (!color)
@@ -59,27 +82,111 @@ export const createProduct = async (req, res) => {
         message: "Color is required",
       });
 
-    if (status && !["Active", "Inactive"].includes(status))
+    if (!size)
       return res.status(400).json({
         success: false,
-        message: "Invalid status value",
+        message: "Size is required",
       });
+
+    const validSizes = ["S", "M", "L", "XL", "XXL"];
+
+    if (!validSizes.includes(size))
+      return res.status(400).json({
+        success: false,
+        message: "Invalid size value",
+      });
+
+    if (!salesTax)
+      return res.status(400).json({
+        success: false,
+        message: "Sales tax is required",
+      });
+
+    if (b2bSalePrice == null || b2bSalePrice < 0)
+      return res.status(400).json({
+        success: false,
+        message: "Valid B2B sale price is required",
+      });
+
+    if (b2cSalePrice == null || b2cSalePrice < 0)
+      return res.status(400).json({
+        success: false,
+        message: "Valid B2C sale price is required",
+      });
+
+    if (purchasePrice == null || purchasePrice < 0)
+      return res.status(400).json({
+        success: false,
+        message: "Valid purchase price is required",
+      });
+
+    /* =============================
+       QUANTITY VALIDATION
+    ============================== */
+
+    let finalQuantity = 0;
+
+    if (quantity != null) {
+
+      if (isNaN(quantity) || quantity < 0)
+        return res.status(400).json({
+          success: false,
+          message: "Quantity must be a number ≥ 0",
+        });
+
+      finalQuantity = Number(quantity);
+    }
+
+    /* =============================
+       STATUS VALIDATION
+    ============================== */
+
+    let finalStatus = "Active";
+
+    if (status) {
+
+      if (!["Active", "Inactive"].includes(status))
+        return res.status(400).json({
+          success: false,
+          message: "Invalid status value",
+        });
+
+      finalStatus = status;
+    }
+
+    /* =============================
+       CREATE PRODUCT
+    ============================== */
 
     const product = await Product.create({
 
-      ...req.body,
       userId,
       branchId,
-      quantity: 0, // replaces inventory create
+
+      productName,
+      itemCode,
+      barCode,
+      color,
+      size,
+
+      quantity: finalQuantity,
+
+      hsnCode,
+      salesTax,
+      shortDescription,
+
+      b2bSalePrice,
+      b2cSalePrice,
+      purchasePrice,
+
+      status: finalStatus,
 
     });
 
     res.status(201).json({
-
       success: true,
       message: "Product created successfully",
       data: product,
-
     });
 
   } catch (error) {
