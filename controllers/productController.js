@@ -138,23 +138,6 @@ export const createProduct = async (req, res) => {
     }
 
     /* =============================
-       STATUS VALIDATION
-    ============================== */
-
-    let finalStatus = "Active";
-
-    if (status) {
-
-      if (!["Active", "Inactive"].includes(status))
-        return res.status(400).json({
-          success: false,
-          message: "Invalid status value",
-        });
-
-      finalStatus = status;
-    }
-
-    /* =============================
        CREATE PRODUCT
     ============================== */
 
@@ -178,8 +161,6 @@ export const createProduct = async (req, res) => {
       b2bSalePrice,
       b2cSalePrice,
       purchasePrice,
-
-      status: finalStatus,
 
     });
 
@@ -323,6 +304,7 @@ export const updateProduct = async (req, res) => {
     delete req.body.branchId;
     delete req.body.userId;
     delete req.body.quantity;
+    delete req.body.status;
 
     if (
       req.body.status &&

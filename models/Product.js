@@ -83,7 +83,7 @@ const ProductSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ["Active", "Inactive"],
-      default: "Active",
+      default: "Inactive",
       required: true,
     },
   },
@@ -91,7 +91,24 @@ const ProductSchema = new mongoose.Schema(
 );
 
 
-// INDEXES (UNCHANGED)
+/* ============================================
+   AUTO STATUS BASED ON QUANTITY
+============================================ */
+ProductSchema.pre("save", function (next) {
+
+  if (this.quantity > 0)
+    this.status = "Active";
+  else
+    this.status = "Inactive";
+
+  next();
+});
+
+
+/* ============================================
+   INDEXES (UNCHANGED)
+============================================ */
+
 ProductSchema.index(
   { branchId: 1, barCode: 1 },
   { unique: true }
