@@ -3,7 +3,7 @@ import Product from "../models/Product.js";
 
 
 /* ======================================================
-   Helper: Format Errors (UNCHANGED)
+   Helper: Format Errors
 ====================================================== */
 const handleValidationError = (error, res) => {
 
@@ -36,7 +36,7 @@ const handleValidationError = (error, res) => {
 
 
 /* ======================================================
-   Create Product (same logic, quantity auto)
+   Create Product 
 ====================================================== */
 export const createProduct = async (req, res) => {
   try {
@@ -57,7 +57,6 @@ export const createProduct = async (req, res) => {
       b2bSalePrice,
       b2cSalePrice,
       purchasePrice,
-      status
     } = req.body;
 
     /* =============================
@@ -88,7 +87,26 @@ export const createProduct = async (req, res) => {
         message: "Size is required",
       });
 
-    const validSizes = ["S", "M", "L", "XL", "XXL"];
+    const validSizes = [
+      "XXXS",
+      "XXS",
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL",
+      "XXXL",
+      "4XL",
+      "5XL",
+      "6XL",
+      "7XL",
+      "8XL",
+      "9XL",
+      "10XL",
+      "FREE",
+      "CUSTOM"
+    ];
 
     if (!validSizes.includes(size))
       return res.status(400).json({
@@ -96,29 +114,52 @@ export const createProduct = async (req, res) => {
         message: "Invalid size value",
       });
 
-    if (!salesTax)
+
+    /* =============================
+       SALES TAX VALIDATION
+    ============================== */
+
+    if (salesTax == null || salesTax === "")
       return res.status(400).json({
         success: false,
         message: "Sales tax is required",
       });
 
-    if (b2bSalePrice == null || b2bSalePrice < 0)
+    const finalSalesTax = Number(salesTax);
+
+    if (isNaN(finalSalesTax) || finalSalesTax < 0)
+      return res.status(400).json({
+        success: false,
+        message: "Sales tax must be a valid number ≥ 0",
+      });
+
+
+    /* =============================
+       PRICE VALIDATION 
+    ============================== */
+
+    const finalB2BSalePrice = Number(b2bSalePrice);
+    const finalB2CSalePrice = Number(b2cSalePrice);
+    const finalPurchasePrice = Number(purchasePrice);
+
+    if (isNaN(finalB2BSalePrice) || finalB2BSalePrice < 0)
       return res.status(400).json({
         success: false,
         message: "Valid B2B sale price is required",
       });
 
-    if (b2cSalePrice == null || b2cSalePrice < 0)
+    if (isNaN(finalB2CSalePrice) || finalB2CSalePrice < 0)
       return res.status(400).json({
         success: false,
         message: "Valid B2C sale price is required",
       });
 
-    if (purchasePrice == null || purchasePrice < 0)
+    if (isNaN(finalPurchasePrice) || finalPurchasePrice < 0)
       return res.status(400).json({
         success: false,
         message: "Valid purchase price is required",
       });
+
 
     /* =============================
        QUANTITY VALIDATION
@@ -128,14 +169,17 @@ export const createProduct = async (req, res) => {
 
     if (quantity != null) {
 
-      if (isNaN(quantity) || quantity < 0)
+      const qty = Number(quantity);
+
+      if (isNaN(qty) || qty < 0)
         return res.status(400).json({
           success: false,
           message: "Quantity must be a number ≥ 0",
         });
 
-      finalQuantity = Number(quantity);
+      finalQuantity = qty;
     }
+
 
     /* =============================
        CREATE PRODUCT
@@ -155,12 +199,12 @@ export const createProduct = async (req, res) => {
       quantity: finalQuantity,
 
       hsnCode,
-      salesTax,
+      salesTax: finalSalesTax,
       shortDescription,
 
-      b2bSalePrice,
-      b2cSalePrice,
-      purchasePrice,
+      b2bSalePrice: finalB2BSalePrice,
+      b2cSalePrice: finalB2CSalePrice,
+      purchasePrice: finalPurchasePrice,
 
     });
 
@@ -180,7 +224,7 @@ export const createProduct = async (req, res) => {
 
 
 /* ======================================================
-   Get Products
+   Get Products 
 ====================================================== */
 export const getAllProductsWithStatus = async (req, res) => {
 
@@ -229,7 +273,7 @@ export const getAllProductsWithStatus = async (req, res) => {
 
 
 /* ======================================================
-   Get Product By Id
+   Get Product By Id 
 ====================================================== */
 export const getProductById = async (req, res) => {
 
@@ -274,7 +318,7 @@ export const getProductById = async (req, res) => {
 
 
 /* ======================================================
-   Update Product
+   Update Product 
 ====================================================== */
 export const updateProduct = async (req, res) => {
 
@@ -306,15 +350,6 @@ export const updateProduct = async (req, res) => {
     delete req.body.quantity;
     delete req.body.status;
 
-    if (
-      req.body.status &&
-      !["Active", "Inactive"].includes(req.body.status)
-    )
-      return res.status(400).json({
-        success: false,
-        message: "Invalid status",
-      });
-
     Object.assign(product, req.body);
 
     await product.save();
@@ -333,7 +368,6 @@ export const updateProduct = async (req, res) => {
 
   }
 };
-
 
 
 /* ======================================================
@@ -382,9 +416,8 @@ export const deleteProduct = async (req, res) => {
 };
 
 
-
 /* ======================================================
-   ADD STOCK (replaces inventory add)
+   ADD STOCK 
 ====================================================== */
 export const addStock = async (req, res) => {
 
@@ -393,13 +426,15 @@ export const addStock = async (req, res) => {
     const { productId, quantity } = req.body;
     const branchId = req.user.branchId;
 
+    const qty = Number(quantity);
+
     if (!mongoose.Types.ObjectId.isValid(productId))
       return res.status(400).json({
         success: false,
         message: "Invalid product ID",
       });
 
-    if (!quantity || quantity <= 0)
+    if (isNaN(qty) || qty <= 0)
       return res.status(400).json({
         success: false,
         message: "Quantity must be greater than 0",
@@ -417,7 +452,7 @@ export const addStock = async (req, res) => {
         message: "Product not found",
       });
 
-    product.quantity += quantity;
+    product.quantity += qty;
 
     await product.save();
 
@@ -440,7 +475,7 @@ export const addStock = async (req, res) => {
 
 
 /* ======================================================
-   REDUCE STOCK
+   REDUCE STOCK 
 ====================================================== */
 export const reduceStock = async (req, res) => {
 
@@ -449,13 +484,15 @@ export const reduceStock = async (req, res) => {
     const { productId, quantity } = req.body;
     const branchId = req.user.branchId;
 
+    const qty = Number(quantity);
+
     if (!mongoose.Types.ObjectId.isValid(productId))
       return res.status(400).json({
         success: false,
         message: "Invalid product ID",
       });
 
-    if (!quantity || quantity <= 0)
+    if (isNaN(qty) || qty <= 0)
       return res.status(400).json({
         success: false,
         message: "Quantity must be greater than 0",
@@ -473,13 +510,13 @@ export const reduceStock = async (req, res) => {
         message: "Product not found",
       });
 
-    if (product.quantity < quantity)
+    if (product.quantity < qty)
       return res.status(400).json({
         success: false,
         message: "Insufficient stock",
       });
 
-    product.quantity -= quantity;
+    product.quantity -= qty;
 
     await product.save();
 
@@ -502,7 +539,7 @@ export const reduceStock = async (req, res) => {
 
 
 /* ======================================================
-   LOW STOCK
+   LOW STOCK 
 ====================================================== */
 export const getLowStock = async (req, res) => {
 
@@ -524,7 +561,7 @@ export const getLowStock = async (req, res) => {
 
 
 /* ======================================================
-   STOCK SUMMARY
+   STOCK SUMMARY 
 ====================================================== */
 export const getStockSummary = async (req, res) => {
 

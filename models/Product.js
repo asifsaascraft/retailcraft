@@ -39,10 +39,28 @@ const ProductSchema = new mongoose.Schema(
 
     size: {
       type: String,
-      enum: ["S", "M", "L", "XL", "XXL"],
+      enum: [
+        "XXXS",
+        "XXS",
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL",
+        "XXXL",
+        "4XL",
+        "5XL",
+        "6XL",
+        "7XL",
+        "8XL",
+        "9XL",
+        "10XL",
+        "FREE",
+        "CUSTOM"
+      ],
       required: [true, "Size is required"],
     },
-
     quantity: {
       type: Number,
       default: 0,
@@ -54,8 +72,8 @@ const ProductSchema = new mongoose.Schema(
       trim: true,
     },
 
-    salesTax: {
-      type: String,
+    salesTax: {  // In percentage
+      type: Number,
       required: [true, "Sale tax is required"],
       trim: true,
     },
@@ -120,4 +138,4 @@ ProductSchema.index(
 );
 
 export default mongoose.models.Product ||
-mongoose.model("Product", ProductSchema);
+  mongoose.model("Product", ProductSchema);
