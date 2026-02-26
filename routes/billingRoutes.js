@@ -4,7 +4,10 @@ import {
   createBilling,
   addProductByBarcode,
   getBillingById,
-  completeBilling
+  completeBilling,
+  removeProductFromBilling,
+  updateProductQuantity,
+  deleteBilling,
 } from "../controllers/billingController.js";
 
 import { protectUser }
@@ -21,12 +24,19 @@ router.post(
   addProductByBarcode
 );
 
+router.post("/remove-product", removeProductFromBilling);
+
+router.put("/update-quantity", updateProductQuantity);
+
+
 router.post(
   "/complete/:id",
   completeBilling
 );
 
 router.get("/:id", getBillingById);
+
+router.delete("/:id", deleteBilling);
 
 
 export default router;
