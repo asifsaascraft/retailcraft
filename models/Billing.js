@@ -1,8 +1,7 @@
 import mongoose from "mongoose";
 
 /* ======================================================
-   Billing Item Schema
-   Each product in invoice
+   Invoice Item
 ====================================================== */
 const BillingItemSchema = new mongoose.Schema(
   {
@@ -53,7 +52,7 @@ const BillingItemSchema = new mongoose.Schema(
 
 
 /* ======================================================
-   Main Billing Schema
+   Billing Schema
 ====================================================== */
 const BillingSchema = new mongoose.Schema(
   {
@@ -75,23 +74,26 @@ const BillingSchema = new mongoose.Schema(
       required: true,
     },
 
+    invoiceNumber: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+
     items: [BillingItemSchema],
 
     subTotal: {
       type: Number,
-      required: true,
       default: 0,
     },
 
     totalTax: {
       type: Number,
-      required: true,
       default: 0,
     },
 
     grandTotal: {
       type: Number,
-      required: true,
       default: 0,
     },
 
@@ -105,4 +107,4 @@ const BillingSchema = new mongoose.Schema(
 );
 
 export default mongoose.models.Billing ||
-  mongoose.model("Billing", BillingSchema);
+mongoose.model("Billing", BillingSchema);

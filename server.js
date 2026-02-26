@@ -13,6 +13,7 @@ import userAuthRoutes from "./routes/userAuthRoutes.js";
 import branchRoutes from "./routes/branchRoutes.js";
 import customerRoutes from "./routes/customerRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
+import billingRoutes from "./routes/billingRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 
 
@@ -47,7 +48,7 @@ const corsOptions = {
     console.error("CORS blocked origin:", origin)
     return callback(new Error('Not allowed by CORS'))
   },
-  credentials: true, // 🔥 REQUIRED for cookies
+  credentials: true, //  REQUIRED for cookies
 }
 
 app.use(helmet())
@@ -71,6 +72,7 @@ app.use("/api/users", userAuthRoutes);
 app.use("/api/branches", branchRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/products", productRoutes);
+app.use("/api/billing", billingRoutes);
 
 app.use("/api", userRoutes);
 
