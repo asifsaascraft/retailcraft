@@ -238,7 +238,7 @@ export const getBillingById = async (req, res) => {
         req.params.id
       )
         .populate("customerId")
-        .populate("items.productId");
+       // .populate("items.productId");
 
     if (!billing)
       return res.status(404).json({

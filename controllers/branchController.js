@@ -8,6 +8,7 @@ export const createBranch = async (req, res) => {
   try {
     const {
       branchName,
+      branchPhoneNumber,
       address,
       country,
       state,
@@ -21,6 +22,7 @@ export const createBranch = async (req, res) => {
     //  Required validation
     if (
       !branchName ||
+      !branchPhoneNumber ||
       !address ||
       !country ||
       !state ||
@@ -56,6 +58,7 @@ export const createBranch = async (req, res) => {
 
     const branch = await Branch.create({
       branchName,
+      branchPhoneNumber,
       address,
       country,
       state,

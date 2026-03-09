@@ -7,6 +7,11 @@ const BranchSchema = new mongoose.Schema(
       required: [true, "Branch name is required"],
       trim: true,
     },
+    branchPhoneNumber: {
+      type: String,
+      required: [true, "Branch phone number is required"],
+      trim: true,
+    },
     address: {
       type: String,
       required: [true, "Address is required"],
