@@ -37,6 +37,12 @@ const CustomerSchema = new mongoose.Schema(
       trim: true,
     },
 
+    address: {
+      type: String,
+      required: [true, "Address is required"],
+      trim: true,
+    },
+
     country: {
       type: String,
       required: [true, "Country is required"],
