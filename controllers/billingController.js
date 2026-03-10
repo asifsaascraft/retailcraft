@@ -230,25 +230,79 @@ export const addProductByBarcode = async (req, res) => {
    Get Billing By ID
 ====================================================== */
 export const getBillingById = async (req, res) => {
-
   try {
 
-    const billing =
-      await Billing.findById(
-        req.params.id
-      )
-        .populate("customerId")
-       // .populate("items.productId");
+    const billing = await Billing.findById(req.params.id)
 
-    if (!billing)
+      // populate customer with selected fields
+      .populate(
+        "customerId",
+        "customerType name email mobile"
+      )
+
+      // populate branch with selected fields
+      .populate(
+        "branchId",
+        "branchName branchPhoneNumber address country state city pincode branchCode branchGstNumber"
+      );
+
+    if (!billing) {
       return res.status(404).json({
         success: false,
         message: "Billing not found",
       });
+    }
+
+    /* =========================
+       MERGE SAME PRODUCTS
+    ========================== */
+
+    const mergedItemsMap = {};
+
+    billing.items.forEach((item) => {
+
+      const key = item.productId.toString();
+
+      if (!mergedItemsMap[key]) {
+        mergedItemsMap[key] = { ...item.toObject() };
+      } else {
+
+        mergedItemsMap[key].quantity += item.quantity;
+        mergedItemsMap[key].taxAmount += item.taxAmount;
+        mergedItemsMap[key].totalAmount += item.totalAmount;
+
+      }
+
+    });
+
+    const mergedItems = Object.values(mergedItemsMap);
+
+    /* =========================
+       CALCULATE AVERAGE TAX %
+    ========================== */
+
+    let totalTaxPercent = 0;
+
+    if (mergedItems.length > 0) {
+
+      const sumTaxPercent = mergedItems.reduce(
+        (sum, item) => sum + item.taxPercent,
+        0
+      );
+
+      totalTaxPercent = sumTaxPercent / mergedItems.length;
+
+    }
+
+    const result = {
+      ...billing.toObject(),
+      items: mergedItems,
+      totalTaxPercent
+    };
 
     res.json({
       success: true,
-      data: billing,
+      data: result
     });
 
   } catch (error) {
@@ -259,9 +313,7 @@ export const getBillingById = async (req, res) => {
     });
 
   }
-
 };
-
 
 
 /* ======================================================
