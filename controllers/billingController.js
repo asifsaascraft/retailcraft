@@ -73,7 +73,6 @@ export const createBilling = async (req, res) => {
    Add Product using Barcode Scanner
 ====================================================== */
 export const addProductByBarcode = async (req, res) => {
-
   try {
 
     const branchId = req.user.branchId;
@@ -84,7 +83,7 @@ export const addProductByBarcode = async (req, res) => {
       quantity
     } = req.body;
 
-    const qty = Number(quantity);
+    const qty = Number(quantity) || 1;
 
     if (isNaN(qty) || qty <= 0)
       return res.status(400).json({
@@ -92,8 +91,7 @@ export const addProductByBarcode = async (req, res) => {
         message: "Invalid quantity",
       });
 
-    const billing =
-      await Billing.findById(billingId);
+    const billing = await Billing.findById(billingId);
 
     if (!billing)
       return res.status(404).json({
@@ -107,16 +105,14 @@ export const addProductByBarcode = async (req, res) => {
         message: "Invoice already completed. Cannot add more products.",
       });
 
-    const customer =
-      await Customer.findById(
-        billing.customerId
-      );
+    const customer = await Customer.findById(
+      billing.customerId
+    );
 
-    const product =
-      await Product.findOne({
-        branchId,
-        barCode,
-      });
+    const product = await Product.findOne({
+      branchId,
+      barCode,
+    });
 
     if (!product)
       return res.status(404).json({
@@ -131,10 +127,8 @@ export const addProductByBarcode = async (req, res) => {
     if (product.quantity < qty)
       return res.status(400).json({
         success: false,
-        message:
-          "Not enough stock available",
+        message: "Not enough stock available",
       });
-
 
     /* =============================
        SELECT PRICE BASED ON CUSTOMER TYPE
@@ -146,7 +140,6 @@ export const addProductByBarcode = async (req, res) => {
       price = product.b2bSalePrice;
     else
       price = product.b2cSalePrice;
-
 
     /* =============================
        TAX CALCULATION
@@ -160,41 +153,77 @@ export const addProductByBarcode = async (req, res) => {
     const totalAmount =
       price * qty + taxAmount;
 
-
     /* =============================
-       ADD ITEM
+       CHECK IF PRODUCT ALREADY EXISTS
     ============================== */
 
-    billing.items.push({
+    const existingItem = billing.items.find(
+      item =>
+        item.productId.toString() ===
+        product._id.toString()
+    );
 
-      productId: product._id,
-      productName: product.productName,
-      barCode: product.barCode,
+    if (existingItem) {
 
-      quantity: qty,
+      /* remove old totals */
+      billing.subTotal -= existingItem.price * existingItem.quantity;
+      billing.totalTax -= existingItem.taxAmount;
+      billing.grandTotal -= existingItem.totalAmount;
 
-      price,
+      /* increase quantity */
+      existingItem.quantity += qty;
 
-      taxPercent,
-      taxAmount,
+      /* recalculate tax */
+      const newTaxAmount =
+        (existingItem.price *
+          existingItem.quantity *
+          existingItem.taxPercent) / 100;
 
-      totalAmount,
+      const newTotalAmount =
+        existingItem.price *
+        existingItem.quantity +
+        newTaxAmount;
 
-    });
+      existingItem.taxAmount = newTaxAmount;
+      existingItem.totalAmount = newTotalAmount;
 
+      /* add new totals */
+      billing.subTotal +=
+        existingItem.price * existingItem.quantity;
 
-    /* =============================
-       UPDATE TOTALS
-    ============================== */
+      billing.totalTax += newTaxAmount;
 
-    billing.subTotal += price * qty;
+      billing.grandTotal += newTotalAmount;
 
-    billing.totalTax += taxAmount;
+    } else {
 
-    billing.grandTotal += totalAmount;
+      /* ADD NEW PRODUCT */
 
+      billing.items.push({
+
+        productId: product._id,
+        productName: product.productName,
+        barCode: product.barCode,
+
+        quantity: qty,
+
+        price,
+
+        taxPercent,
+        taxAmount,
+
+        totalAmount,
+
+      });
+
+      billing.subTotal += price * qty;
+      billing.totalTax += taxAmount;
+      billing.grandTotal += totalAmount;
+
+    }
+
+    /* SAVE BILLING */
     await billing.save();
-
 
     /* =============================
        REDUCE PRODUCT STOCK
@@ -203,7 +232,6 @@ export const addProductByBarcode = async (req, res) => {
     product.quantity -= qty;
 
     await product.save();
-
 
     res.json({
 
