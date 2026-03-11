@@ -14,6 +14,8 @@ import branchRoutes from "./routes/branchRoutes.js";
 import customerRoutes from "./routes/customerRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import billingRoutes from "./routes/billingRoutes.js";
+import supplierRoutes from "./routes/supplierRoutes.js";
+
 import userRoutes from "./routes/userRoutes.js";
 
 
@@ -73,6 +75,8 @@ app.use("/api/branches", branchRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/billing", billingRoutes);
+app.use("/api/suppliers", supplierRoutes);
+
 
 app.use("/api", userRoutes);
 
