@@ -81,6 +81,22 @@ const PurchaseInvoiceSchema = new mongoose.Schema(
       unique: true,
     },
 
+    invoiceDate: {
+      type: Date,
+      required: true,
+    },
+
+    placeOfSupply: {
+      type: String,
+      required: true,
+    },
+
+    reverseCharge: {
+      type: String,
+      required: true,
+    },
+
+
     items: [PurchaseItemSchema],
 
     subTotal: {

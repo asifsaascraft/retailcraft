@@ -9,13 +9,18 @@ import Product from "../models/Product.js";
    Create Purchase Invoice
 ====================================================== */
 export const createPurchaseInvoice = async (req, res) => {
-
   try {
 
     const userId = req.user._id;
     const branchId = req.user.branchId;
 
-    const { supplierId, invoiceNumber } = req.body;
+    const {
+      supplierId,
+      invoiceNumber,
+      invoiceDate,
+      placeOfSupply,
+      reverseCharge
+    } = req.body;
 
     /* =========================
        VALIDATE SUPPLIER ID
@@ -40,6 +45,39 @@ export const createPurchaseInvoice = async (req, res) => {
     }
 
     /* =========================
+       VALIDATE INVOICE DATE
+    ========================== */
+
+    if (!invoiceDate) {
+      return res.status(400).json({
+        success: false,
+        message: "Invoice date is required",
+      });
+    }
+
+    /* =========================
+       VALIDATE PLACE OF SUPPLY
+    ========================== */
+
+    if (!placeOfSupply || placeOfSupply.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Place of supply is required",
+      });
+    }
+
+    /* =========================
+       VALIDATE REVERSE CHARGE
+    ========================== */
+
+    if (!reverseCharge || reverseCharge.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Reverse charge is required",
+      });
+    }
+
+    /* =========================
        CHECK SUPPLIER
     ========================== */
 
@@ -57,7 +95,7 @@ export const createPurchaseInvoice = async (req, res) => {
     ========================== */
 
     const existingInvoice = await PurchaseInvoice.findOne({
-      invoiceNumber
+      invoiceNumber,
     });
 
     if (existingInvoice) {
@@ -72,18 +110,19 @@ export const createPurchaseInvoice = async (req, res) => {
     ========================== */
 
     const purchase = await PurchaseInvoice.create({
-
       userId,
       branchId,
       supplierId,
 
       invoiceNumber,
+      invoiceDate,
+      placeOfSupply,
+      reverseCharge,
 
       items: [],
       subTotal: 0,
       totalTax: 0,
       grandTotal: 0,
-
     });
 
     res.status(201).json({
@@ -100,9 +139,7 @@ export const createPurchaseInvoice = async (req, res) => {
     });
 
   }
-
 };
-
 
 
 /* ======================================================
