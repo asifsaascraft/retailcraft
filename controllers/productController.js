@@ -1,16 +1,12 @@
 import mongoose from "mongoose";
 import Product from "../models/Product.js";
 
-
 /* ======================================================
    Helper: Format Errors
 ====================================================== */
 const handleValidationError = (error, res) => {
-
   if (error.name === "ValidationError") {
-
-    const messages =
-      Object.values(error.errors).map(val => val.message);
+    const messages = Object.values(error.errors).map((val) => val.message);
 
     return res.status(400).json({
       success: false,
@@ -19,11 +15,25 @@ const handleValidationError = (error, res) => {
   }
 
   if (error.code === 11000) {
+    const field = Object.keys(error.keyValue)[0];
+
+    if (field === "productName") {
+      return res.status(400).json({
+        success: false,
+        message: "Product with this name already exists",
+      });
+    }
+
+    if (field === "barCode") {
+      return res.status(400).json({
+        success: false,
+        message: "Product already exists with same barcode",
+      });
+    }
 
     return res.status(400).json({
       success: false,
-      message:
-        "Product already exists with same barcode",
+      message: "Duplicate value detected",
     });
   }
 
@@ -33,14 +43,11 @@ const handleValidationError = (error, res) => {
   });
 };
 
-
-
 /* ======================================================
    Create Product 
 ====================================================== */
 export const createProduct = async (req, res) => {
   try {
-
     const userId = req.user._id;
     const branchId = req.user.branchId;
 
@@ -53,6 +60,7 @@ export const createProduct = async (req, res) => {
       quantity,
       hsnCode,
       salesTax,
+      purchaseTax,
       shortDescription,
       b2bSalePrice,
       b2cSalePrice,
@@ -105,7 +113,7 @@ export const createProduct = async (req, res) => {
       "9XL",
       "10XL",
       "FREE",
-      "CUSTOM"
+      "CUSTOM",
     ];
 
     if (!validSizes.includes(size))
@@ -113,7 +121,6 @@ export const createProduct = async (req, res) => {
         success: false,
         message: "Invalid size value",
       });
-
 
     /* =============================
        SALES TAX VALIDATION
@@ -133,6 +140,23 @@ export const createProduct = async (req, res) => {
         message: "Sales tax must be a valid number ≥ 0",
       });
 
+    /* =============================
+   PURCHASE TAX VALIDATION
+============================== */
+
+    if (purchaseTax == null || purchaseTax === "")
+      return res.status(400).json({
+        success: false,
+        message: "Purchase tax is required",
+      });
+
+    const finalPurchaseTax = Number(purchaseTax);
+
+    if (isNaN(finalPurchaseTax) || finalPurchaseTax < 0)
+      return res.status(400).json({
+        success: false,
+        message: "Purchase tax must be a valid number ≥ 0",
+      });
 
     /* =============================
        PRICE VALIDATION 
@@ -160,7 +184,6 @@ export const createProduct = async (req, res) => {
         message: "Valid purchase price is required",
       });
 
-
     /* =============================
        QUANTITY VALIDATION
     ============================== */
@@ -168,7 +191,6 @@ export const createProduct = async (req, res) => {
     let finalQuantity = 0;
 
     if (quantity != null) {
-
       const qty = Number(quantity);
 
       if (isNaN(qty) || qty < 0)
@@ -180,13 +202,11 @@ export const createProduct = async (req, res) => {
       finalQuantity = qty;
     }
 
-
     /* =============================
        CREATE PRODUCT
     ============================== */
 
     const product = await Product.create({
-
       userId,
       branchId,
 
@@ -200,12 +220,12 @@ export const createProduct = async (req, res) => {
 
       hsnCode,
       salesTax: finalSalesTax,
+      purchaseTax: finalPurchaseTax,
       shortDescription,
 
       b2bSalePrice: finalB2BSalePrice,
       b2cSalePrice: finalB2CSalePrice,
       purchasePrice: finalPurchasePrice,
-
     });
 
     res.status(201).json({
@@ -213,33 +233,24 @@ export const createProduct = async (req, res) => {
       message: "Product created successfully",
       data: product,
     });
-
   } catch (error) {
-
     handleValidationError(error, res);
-
   }
 };
-
-
 
 /* ======================================================
    Get Products 
 ====================================================== */
 export const getAllProductsWithStatus = async (req, res) => {
-
   try {
-
     const branchId = req.user.branchId;
     const { status } = req.query;
 
     let filter = { branchId };
 
-    if (!status)
-      filter.status = "Active";
+    if (!status) filter.status = "Active";
 
     if (status && status !== "All") {
-
       if (!["Active", "Inactive"].includes(status))
         return res.status(400).json({
           success: false,
@@ -249,20 +260,14 @@ export const getAllProductsWithStatus = async (req, res) => {
       filter.status = status;
     }
 
-    const products =
-      await Product.find(filter)
-        .sort({ createdAt: -1 });
+    const products = await Product.find(filter).sort({ createdAt: -1 });
 
     res.json({
-
       success: true,
       count: products.length,
       data: products,
-
     });
-
   } catch (error) {
-
     res.status(500).json({
       success: false,
       message: error.message,
@@ -270,15 +275,11 @@ export const getAllProductsWithStatus = async (req, res) => {
   }
 };
 
-
-
 /* ======================================================
    Get Product By Id 
 ====================================================== */
 export const getProductById = async (req, res) => {
-
   try {
-
     const { id } = req.params;
     const branchId = req.user.branchId;
 
@@ -288,11 +289,10 @@ export const getProductById = async (req, res) => {
         message: "Invalid product ID",
       });
 
-    const product =
-      await Product.findOne({
-        _id: id,
-        branchId,
-      });
+    const product = await Product.findOne({
+      _id: id,
+      branchId,
+    });
 
     if (!product)
       return res.status(404).json({
@@ -304,26 +304,19 @@ export const getProductById = async (req, res) => {
       success: true,
       data: product,
     });
-
   } catch (error) {
-
     res.status(500).json({
       success: false,
       message: error.message,
     });
-
   }
 };
-
-
 
 /* ======================================================
    Update Product 
 ====================================================== */
 export const updateProduct = async (req, res) => {
-
   try {
-
     const { id } = req.params;
     const branchId = req.user.branchId;
 
@@ -333,11 +326,10 @@ export const updateProduct = async (req, res) => {
         message: "Invalid product ID",
       });
 
-    const product =
-      await Product.findOne({
-        _id: id,
-        branchId,
-      });
+    const product = await Product.findOne({
+      _id: id,
+      branchId,
+    });
 
     if (!product)
       return res.status(404).json({
@@ -355,28 +347,20 @@ export const updateProduct = async (req, res) => {
     await product.save();
 
     res.json({
-
       success: true,
       message: "Product updated successfully",
       data: product,
-
     });
-
   } catch (error) {
-
     handleValidationError(error, res);
-
   }
 };
-
 
 /* ======================================================
    Delete Product
 ====================================================== */
 export const deleteProduct = async (req, res) => {
-
   try {
-
     const { id } = req.params;
     const branchId = req.user.branchId;
 
@@ -386,11 +370,10 @@ export const deleteProduct = async (req, res) => {
         message: "Invalid product ID",
       });
 
-    const product =
-      await Product.findOne({
-        _id: id,
-        branchId,
-      });
+    const product = await Product.findOne({
+      _id: id,
+      branchId,
+    });
 
     if (!product)
       return res.status(404).json({
@@ -404,25 +387,19 @@ export const deleteProduct = async (req, res) => {
       success: true,
       message: "Product deleted successfully",
     });
-
   } catch (error) {
-
     res.status(500).json({
       success: false,
       message: error.message,
     });
-
   }
 };
-
 
 /* ======================================================
    ADD STOCK 
 ====================================================== */
 export const addStock = async (req, res) => {
-
   try {
-
     const { productId, quantity } = req.body;
     const branchId = req.user.branchId;
 
@@ -440,11 +417,10 @@ export const addStock = async (req, res) => {
         message: "Quantity must be greater than 0",
       });
 
-    const product =
-      await Product.findOne({
-        _id: productId,
-        branchId,
-      });
+    const product = await Product.findOne({
+      _id: productId,
+      branchId,
+    });
 
     if (!product)
       return res.status(404).json({
@@ -461,26 +437,19 @@ export const addStock = async (req, res) => {
       message: "Stock added successfully",
       data: product,
     });
-
   } catch (error) {
-
     res.status(500).json({
       success: false,
       message: error.message,
     });
-
   }
 };
-
-
 
 /* ======================================================
    REDUCE STOCK 
 ====================================================== */
 export const reduceStock = async (req, res) => {
-
   try {
-
     const { productId, quantity } = req.body;
     const branchId = req.user.branchId;
 
@@ -498,11 +467,10 @@ export const reduceStock = async (req, res) => {
         message: "Quantity must be greater than 0",
       });
 
-    const product =
-      await Product.findOne({
-        _id: productId,
-        branchId,
-      });
+    const product = await Product.findOne({
+      _id: productId,
+      branchId,
+    });
 
     if (!product)
       return res.status(404).json({
@@ -525,66 +493,52 @@ export const reduceStock = async (req, res) => {
       message: "Stock reduced successfully",
       data: product,
     });
-
   } catch (error) {
-
     res.status(500).json({
       success: false,
       message: error.message,
     });
-
   }
 };
-
-
 
 /* ======================================================
    LOW STOCK 
 ====================================================== */
 export const getLowStock = async (req, res) => {
-
   const branchId = req.user.branchId;
 
-  const products =
-    await Product.find({
-      branchId,
-      quantity: { $lte: 5 },
-    });
+  const products = await Product.find({
+    branchId,
+    quantity: { $lte: 5 },
+  });
 
   res.json({
     success: true,
     data: products,
   });
-
 };
-
-
 
 /* ======================================================
    STOCK SUMMARY 
 ====================================================== */
 export const getStockSummary = async (req, res) => {
-
   const branchId = req.user.branchId;
 
-  const totalProducts =
-    await Product.countDocuments({ branchId });
+  const totalProducts = await Product.countDocuments({ branchId });
 
-  const stock =
-    await Product.aggregate([
-      { $match: { branchId } },
-      {
-        $group: {
-          _id: null,
-          totalStock: { $sum: "$quantity" },
-        },
+  const stock = await Product.aggregate([
+    { $match: { branchId } },
+    {
+      $group: {
+        _id: null,
+        totalStock: { $sum: "$quantity" },
       },
-    ]);
+    },
+  ]);
 
   res.json({
     success: true,
     totalProducts,
     totalStock: stock[0]?.totalStock || 0,
   });
-
 };

@@ -57,7 +57,7 @@ const ProductSchema = new mongoose.Schema(
         "9XL",
         "10XL",
         "FREE",
-        "CUSTOM"
+        "CUSTOM",
       ],
       required: [true, "Size is required"],
     },
@@ -72,9 +72,17 @@ const ProductSchema = new mongoose.Schema(
       trim: true,
     },
 
-    salesTax: {  // In percentage
+    salesTax: {
+      // In percentage
       type: Number,
       required: [true, "Sale tax is required"],
+      trim: true,
+    },
+
+    purchaseTax: {
+      // In percentage
+      type: Number,
+      required: [true, "Purchase tax is required"],
       trim: true,
     },
 
@@ -105,36 +113,28 @@ const ProductSchema = new mongoose.Schema(
       required: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
-
 
 /* ============================================
    AUTO STATUS BASED ON QUANTITY
 ============================================ */
 ProductSchema.pre("save", function (next) {
-
-  if (this.quantity > 0)
-    this.status = "Active";
-  else
-    this.status = "Inactive";
+  if (this.quantity > 0) this.status = "Active";
+  else this.status = "Inactive";
 
   next();
 });
-
 
 /* ============================================
    INDEXES (UNCHANGED)
 ============================================ */
 
-ProductSchema.index(
-  { branchId: 1, barCode: 1 },
-  { unique: true }
-);
+ProductSchema.index({ branchId: 1, barCode: 1 }, { unique: true });
 
 ProductSchema.index(
   { branchId: 1, productName: 1, color: 1, size: 1 },
-  { unique: true }
+  { unique: true },
 );
 
 export default mongoose.models.Product ||

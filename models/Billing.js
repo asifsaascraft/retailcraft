@@ -102,6 +102,11 @@ const BillingSchema = new mongoose.Schema(
       enum: ["Draft", "Completed"],
       default: "Draft",
     },
+
+    paymentMode: {
+      type: String,
+      enum: ["UPI", "Debit/Credit Card", "Cash"],
+    },
   },
   { timestamps: true }
 );

@@ -347,52 +347,64 @@ export const getBillingById = async (req, res) => {
 /* ======================================================
    Complete Billing
 ====================================================== */
-export const completeBilling =
-  async (req, res) => {
+export const completeBilling = async (req, res) => {
 
-    try {
+  try {
 
-      const billing =
-        await Billing.findById(
-          req.params.id
-        );
+    const { paymentMode } = req.body;
 
-      if (!billing)
-        return res.status(404).json({
-          success: false,
-          message: "Billing not found",
-        });
+    const billing = await Billing.findById(req.params.id);
 
-      if (billing.status === "Completed")
-        return res.status(400).json({
-          success: false,
-          message: "Invoice already completed",
-        });
-
-      billing.status = "Completed";
-
-      await billing.save();
-
-      res.json({
-
-        success: true,
-        message:
-          "Invoice completed",
-
-        data: billing,
-
-      });
-
-    } catch (error) {
-
-      res.status(500).json({
+    if (!billing)
+      return res.status(404).json({
         success: false,
-        message: error.message,
+        message: "Billing not found",
       });
 
-    }
+    if (billing.status === "Completed")
+      return res.status(400).json({
+        success: false,
+        message: "Invoice already completed",
+      });
 
-  };
+    /* =========================
+       PAYMENT MODE VALIDATION
+    ========================== */
+
+    const validPaymentModes = [
+      "UPI",
+      "Debit/Credit Card",
+      "Cash"
+    ];
+
+    if (!paymentMode || !validPaymentModes.includes(paymentMode))
+      return res.status(400).json({
+        success: false,
+        message: "Valid paymentMode is required (UPI, Debit/Credit Card, Cash)",
+      });
+
+    billing.paymentMode = paymentMode;
+
+    billing.status = "Completed";
+
+    await billing.save();
+
+    res.json({
+      success: true,
+      message: "Invoice completed",
+      data: billing,
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+
+  }
+
+};
 
 /* ======================================================
    Remove Product From Billing

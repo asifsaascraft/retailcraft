@@ -200,7 +200,7 @@ export const addProductByBarcode = async (req, res) => {
        TAX CALCULATION
     ============================== */
 
-    const taxPercent = product.salesTax || 0;
+    const taxPercent = product.purchaseTax || 0;
 
     const taxAmount =
       (purchasePrice * qty * taxPercent) / 100;
