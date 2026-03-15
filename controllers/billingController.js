@@ -3,7 +3,6 @@ import Billing from "../models/Billing.js";
 import Product from "../models/Product.js";
 import Customer from "../models/Customer.js";
 
-
 /* ======================================================
    Generate Invoice Number
 ====================================================== */
@@ -11,14 +10,11 @@ const generateInvoiceNumber = () => {
   return "INV-" + Date.now();
 };
 
-
 /* ======================================================
    Create Billing
 ====================================================== */
 export const createBilling = async (req, res) => {
-
   try {
-
     const userId = req.user._id;
     const branchId = req.user.branchId;
     const { customerId } = req.body;
@@ -38,7 +34,6 @@ export const createBilling = async (req, res) => {
       });
 
     const billing = await Billing.create({
-
       userId,
       branchId,
       customerId,
@@ -49,39 +44,28 @@ export const createBilling = async (req, res) => {
       subTotal: 0,
       totalTax: 0,
       grandTotal: 0,
-
     });
 
     res.status(201).json({
       success: true,
       data: billing,
     });
-
   } catch (error) {
-
     res.status(500).json({
       success: false,
       message: error.message,
     });
-
   }
 };
-
-
 
 /* ======================================================
    Add Product using Barcode Scanner
 ====================================================== */
 export const addProductByBarcode = async (req, res) => {
   try {
-
     const branchId = req.user.branchId;
 
-    const {
-      billingId,
-      barCode,
-      quantity
-    } = req.body;
+    const { billingId, barCode, quantity } = req.body;
 
     const qty = Number(quantity) || 1;
 
@@ -105,9 +89,7 @@ export const addProductByBarcode = async (req, res) => {
         message: "Invoice already completed. Cannot add more products.",
       });
 
-    const customer = await Customer.findById(
-      billing.customerId
-    );
+    const customer = await Customer.findById(billing.customerId);
 
     const product = await Product.findOne({
       branchId,
@@ -136,71 +118,72 @@ export const addProductByBarcode = async (req, res) => {
 
     let price = 0;
 
-    if (customer.customerType === "B2B")
-      price = product.b2bSalePrice;
-    else
-      price = product.b2cSalePrice;
+    if (customer.customerType === "B2B") price = product.b2bSalePrice;
+    else price = product.b2cSalePrice;
 
     /* =============================
-       TAX CALCULATION
-    ============================== */
+   TAX CALCULATION (PRICE INCLUDES TAX)
+============================= */
 
-    const taxPercent = product.salesTax;
+    const taxPercent = product.salesTax || 0;
 
-    const taxAmount =
-      (price * qty * taxPercent) / 100;
+    const priceWithQty = price * qty;
 
-    const totalAmount =
-      price * qty + taxAmount;
+    const taxAmount = (priceWithQty * taxPercent) / (100 + taxPercent);
+
+    const baseAmount = priceWithQty - taxAmount;
+
+    const totalAmount = priceWithQty;
 
     /* =============================
        CHECK IF PRODUCT ALREADY EXISTS
     ============================== */
 
     const existingItem = billing.items.find(
-      item =>
-        item.productId.toString() ===
-        product._id.toString()
+      (item) => item.productId.toString() === product._id.toString(),
     );
 
     if (existingItem) {
-
       /* remove old totals */
-      billing.subTotal -= existingItem.price * existingItem.quantity;
-      billing.totalTax -= existingItem.taxAmount;
-      billing.grandTotal -= existingItem.totalAmount;
+
+      const oldPriceWithQty = existingItem.price * existingItem.quantity;
+
+      const oldTax =
+        (oldPriceWithQty * existingItem.taxPercent) /
+        (100 + existingItem.taxPercent);
+
+      const oldBase = oldPriceWithQty - oldTax;
+
+      billing.subTotal -= oldBase;
+      billing.totalTax -= oldTax;
+      billing.grandTotal -= oldPriceWithQty;
 
       /* increase quantity */
+
       existingItem.quantity += qty;
 
-      /* recalculate tax */
-      const newTaxAmount =
-        (existingItem.price *
-          existingItem.quantity *
-          existingItem.taxPercent) / 100;
+      const newPriceWithQty = existingItem.price * existingItem.quantity;
 
-      const newTotalAmount =
-        existingItem.price *
-        existingItem.quantity +
-        newTaxAmount;
+      const newTaxAmount =
+        (newPriceWithQty * existingItem.taxPercent) /
+        (100 + existingItem.taxPercent);
+
+      const newBaseAmount = newPriceWithQty - newTaxAmount;
+
+      const newTotalAmount = newPriceWithQty;
 
       existingItem.taxAmount = newTaxAmount;
       existingItem.totalAmount = newTotalAmount;
 
       /* add new totals */
-      billing.subTotal +=
-        existingItem.price * existingItem.quantity;
 
+      billing.subTotal += newBaseAmount;
       billing.totalTax += newTaxAmount;
-
       billing.grandTotal += newTotalAmount;
-
     } else {
-
       /* ADD NEW PRODUCT */
 
       billing.items.push({
-
         productId: product._id,
         productName: product.productName,
         barCode: product.barCode,
@@ -213,13 +196,11 @@ export const addProductByBarcode = async (req, res) => {
         taxAmount,
 
         totalAmount,
-
       });
 
-      billing.subTotal += price * qty;
+      billing.subTotal += baseAmount;
       billing.totalTax += taxAmount;
       billing.grandTotal += totalAmount;
-
     }
 
     /* SAVE BILLING */
@@ -234,44 +215,33 @@ export const addProductByBarcode = async (req, res) => {
     await product.save();
 
     res.json({
-
       success: true,
       message: "Product added",
 
       data: billing,
-
     });
-
   } catch (error) {
-
     res.status(500).json({
       success: false,
       message: error.message,
     });
-
   }
 };
-
-
 
 /* ======================================================
    Get Billing By ID
 ====================================================== */
 export const getBillingById = async (req, res) => {
   try {
-
     const billing = await Billing.findById(req.params.id)
 
       // populate customer with selected fields
-      .populate(
-        "customerId",
-        "customerType name email mobile"
-      )
+      .populate("customerId", "customerType name email mobile")
 
       // populate branch with selected fields
       .populate(
         "branchId",
-        "branchName branchPhoneNumber address country state city pincode branchCode branchGstNumber"
+        "branchName branchPhoneNumber address country state city pincode branchCode branchGstNumber",
       );
 
     if (!billing) {
@@ -288,19 +258,15 @@ export const getBillingById = async (req, res) => {
     const mergedItemsMap = {};
 
     billing.items.forEach((item) => {
-
       const key = item.productId.toString();
 
       if (!mergedItemsMap[key]) {
         mergedItemsMap[key] = { ...item.toObject() };
       } else {
-
         mergedItemsMap[key].quantity += item.quantity;
         mergedItemsMap[key].taxAmount += item.taxAmount;
         mergedItemsMap[key].totalAmount += item.totalAmount;
-
       }
-
     });
 
     const mergedItems = Object.values(mergedItemsMap);
@@ -312,45 +278,37 @@ export const getBillingById = async (req, res) => {
     let totalTaxPercent = 0;
 
     if (mergedItems.length > 0) {
-
       const sumTaxPercent = mergedItems.reduce(
         (sum, item) => sum + item.taxPercent,
-        0
+        0,
       );
 
       totalTaxPercent = sumTaxPercent / mergedItems.length;
-
     }
 
     const result = {
       ...billing.toObject(),
       items: mergedItems,
-      totalTaxPercent
+      totalTaxPercent,
     };
 
     res.json({
       success: true,
-      data: result
+      data: result,
     });
-
   } catch (error) {
-
     res.status(500).json({
       success: false,
       message: error.message,
     });
-
   }
 };
-
 
 /* ======================================================
    Complete Billing
 ====================================================== */
 export const completeBilling = async (req, res) => {
-
   try {
-
     const { paymentMode } = req.body;
 
     const billing = await Billing.findById(req.params.id);
@@ -371,11 +329,7 @@ export const completeBilling = async (req, res) => {
        PAYMENT MODE VALIDATION
     ========================== */
 
-    const validPaymentModes = [
-      "UPI",
-      "Debit/Credit Card",
-      "Cash"
-    ];
+    const validPaymentModes = ["UPI", "Debit/Credit Card", "Cash"];
 
     if (!paymentMode || !validPaymentModes.includes(paymentMode))
       return res.status(400).json({
@@ -394,16 +348,12 @@ export const completeBilling = async (req, res) => {
       message: "Invoice completed",
       data: billing,
     });
-
   } catch (error) {
-
     res.status(500).json({
       success: false,
       message: error.message,
     });
-
   }
-
 };
 
 /* ======================================================
@@ -411,7 +361,6 @@ export const completeBilling = async (req, res) => {
 ====================================================== */
 export const removeProductFromBilling = async (req, res) => {
   try {
-
     const { billingId, productId } = req.body;
     const branchId = req.user.branchId;
 
@@ -438,11 +387,9 @@ export const removeProductFromBilling = async (req, res) => {
         message: "Cannot modify completed invoice",
       });
 
-    const itemIndex =
-      billing.items.findIndex(
-        item =>
-          item.productId.toString() === productId
-      );
+    const itemIndex = billing.items.findIndex(
+      (item) => item.productId.toString() === productId,
+    );
 
     if (itemIndex === -1)
       return res.status(404).json({
@@ -453,11 +400,10 @@ export const removeProductFromBilling = async (req, res) => {
     const item = billing.items[itemIndex];
 
     /* restore stock */
-    const product =
-      await Product.findOne({
-        _id: productId,
-        branchId,
-      });
+    const product = await Product.findOne({
+      _id: productId,
+      branchId,
+    });
 
     if (product) {
       product.quantity += item.quantity;
@@ -465,9 +411,16 @@ export const removeProductFromBilling = async (req, res) => {
     }
 
     /* update totals */
-    billing.subTotal -= item.price * item.quantity;
-    billing.totalTax -= item.taxAmount;
-    billing.grandTotal -= item.totalAmount;
+    const priceWithQty = item.price * item.quantity;
+
+    const taxAmount =
+      (priceWithQty * item.taxPercent) / (100 + item.taxPercent);
+
+    const baseAmount = priceWithQty - taxAmount;
+
+    billing.subTotal -= baseAmount;
+    billing.totalTax -= taxAmount;
+    billing.grandTotal -= priceWithQty;
 
     /* remove item */
     billing.items.splice(itemIndex, 1);
@@ -479,14 +432,11 @@ export const removeProductFromBilling = async (req, res) => {
       message: "Product removed",
       data: billing,
     });
-
   } catch (error) {
-
     res.status(500).json({
       success: false,
       message: error.message,
     });
-
   }
 };
 
@@ -494,14 +444,8 @@ export const removeProductFromBilling = async (req, res) => {
    Update Product Quantity
 ====================================================== */
 export const updateProductQuantity = async (req, res) => {
-
   try {
-
-    const {
-      billingId,
-      productId,
-      quantity
-    } = req.body;
+    const { billingId, productId, quantity } = req.body;
 
     const branchId = req.user.branchId;
 
@@ -527,11 +471,9 @@ export const updateProductQuantity = async (req, res) => {
         message: "Cannot modify completed invoice",
       });
 
-    const item =
-      billing.items.find(
-        i =>
-          i.productId.toString() === productId
-      );
+    const item = billing.items.find(
+      (i) => i.productId.toString() === productId,
+    );
 
     if (!item)
       return res.status(404).json({
@@ -539,17 +481,14 @@ export const updateProductQuantity = async (req, res) => {
         message: "Product not in billing",
       });
 
-    const product =
-      await Product.findOne({
-        _id: productId,
-        branchId,
-      });
+    const product = await Product.findOne({
+      _id: productId,
+      branchId,
+    });
 
-    const difference =
-      newQty - item.quantity;
+    const difference = newQty - item.quantity;
 
-    if (difference > 0 &&
-      product.quantity < difference)
+    if (difference > 0 && product.quantity < difference)
       return res.status(400).json({
         success: false,
         message: "Insufficient stock",
@@ -561,24 +500,33 @@ export const updateProductQuantity = async (req, res) => {
     await product.save();
 
     /* remove old totals */
-    billing.subTotal -= item.price * item.quantity;
-    billing.totalTax -= item.taxAmount;
-    billing.grandTotal -= item.totalAmount;
+    const oldPriceWithQty = item.price * item.quantity;
+
+    const oldTax =
+      (oldPriceWithQty * item.taxPercent) / (100 + item.taxPercent);
+
+    const oldBase = oldPriceWithQty - oldTax;
+
+    billing.subTotal -= oldBase;
+    billing.totalTax -= oldTax;
+    billing.grandTotal -= oldPriceWithQty;
 
     /* recalculate */
-    const taxAmount =
-      (item.price * newQty *
-        item.taxPercent) / 100;
+    const priceWithQty = item.price * newQty;
 
-    const totalAmount =
-      item.price * newQty + taxAmount;
+    const taxAmount =
+      (priceWithQty * item.taxPercent) / (100 + item.taxPercent);
+
+    const baseAmount = priceWithQty - taxAmount;
+
+    const totalAmount = priceWithQty;
 
     item.quantity = newQty;
     item.taxAmount = taxAmount;
     item.totalAmount = totalAmount;
 
     /* add new totals */
-    billing.subTotal += item.price * newQty;
+    billing.subTotal += baseAmount;
     billing.totalTax += taxAmount;
     billing.grandTotal += totalAmount;
 
@@ -589,14 +537,11 @@ export const updateProductQuantity = async (req, res) => {
       message: "Quantity updated",
       data: billing,
     });
-
   } catch (error) {
-
     res.status(500).json({
       success: false,
       message: error.message,
     });
-
   }
 };
 
@@ -604,11 +549,9 @@ export const updateProductQuantity = async (req, res) => {
    Delete Billing
 ====================================================== */
 export const deleteBilling = async (req, res) => {
-
   const session = await mongoose.startSession();
 
   try {
-
     session.startTransaction();
 
     const billingId = req.params.id;
@@ -651,12 +594,10 @@ export const deleteBilling = async (req, res) => {
     ========================= */
 
     for (const item of billing.items) {
-
-      const product =
-        await Product.findOne({
-          _id: item.productId,
-          branchId
-        }).session(session);
+      const product = await Product.findOne({
+        _id: item.productId,
+        branchId,
+      }).session(session);
 
       if (!product) {
         await session.abortTransaction();
@@ -664,15 +605,13 @@ export const deleteBilling = async (req, res) => {
 
         return res.status(404).json({
           success: false,
-          message:
-            `Product not found: ${item.productId}`,
+          message: `Product not found: ${item.productId}`,
         });
       }
 
       product.quantity += item.quantity;
 
       await product.save({ session });
-
     }
 
     /* =========================
@@ -680,7 +619,7 @@ export const deleteBilling = async (req, res) => {
     ========================= */
 
     await Billing.deleteOne({
-      _id: billingId
+      _id: billingId,
     }).session(session);
 
     await session.commitTransaction();
@@ -688,12 +627,9 @@ export const deleteBilling = async (req, res) => {
 
     res.json({
       success: true,
-      message:
-        "Billing deleted successfully and stock restored",
+      message: "Billing deleted successfully and stock restored",
     });
-
   } catch (error) {
-
     await session.abortTransaction();
     session.endSession();
 
@@ -701,6 +637,5 @@ export const deleteBilling = async (req, res) => {
       success: false,
       message: error.message,
     });
-
   }
 };

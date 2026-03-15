@@ -3,14 +3,11 @@ import PurchaseInvoice from "../models/PurchaseInvoice.js";
 import Supplier from "../models/Supplier.js";
 import Product from "../models/Product.js";
 
-
-
 /* ======================================================
    Create Purchase Invoice
 ====================================================== */
 export const createPurchaseInvoice = async (req, res) => {
   try {
-
     const userId = req.user._id;
     const branchId = req.user.branchId;
 
@@ -19,7 +16,7 @@ export const createPurchaseInvoice = async (req, res) => {
       invoiceNumber,
       invoiceDate,
       placeOfSupply,
-      reverseCharge
+      reverseCharge,
     } = req.body;
 
     /* =========================
@@ -130,32 +127,22 @@ export const createPurchaseInvoice = async (req, res) => {
       message: "Purchase invoice created successfully",
       data: purchase,
     });
-
   } catch (error) {
-
     res.status(500).json({
       success: false,
       message: error.message,
     });
-
   }
 };
-
 
 /* ======================================================
    Add Product using Barcode Scanner
 ====================================================== */
 export const addProductByBarcode = async (req, res) => {
-
   try {
-
     const branchId = req.user.branchId;
 
-    const {
-      purchaseId,
-      barCode,
-      quantity
-    } = req.body;
+    const { purchaseId, barCode, quantity } = req.body;
 
     const qty = Number(quantity) || 1;
 
@@ -202,64 +189,65 @@ export const addProductByBarcode = async (req, res) => {
 
     const taxPercent = product.purchaseTax || 0;
 
-    const taxAmount =
-      (purchasePrice * qty * taxPercent) / 100;
+    const priceWithQty = purchasePrice * qty;
 
-    const totalAmount =
-      purchasePrice * qty + taxAmount;
+    const taxAmount = (priceWithQty * taxPercent) / (100 + taxPercent);
+
+    const baseAmount = priceWithQty - taxAmount;
+
+    const totalAmount = priceWithQty;
 
     /* =============================
        CHECK IF PRODUCT ALREADY EXISTS
     ============================== */
 
     const existingItem = purchase.items.find(
-      item =>
-        item.productId.toString() ===
-        product._id.toString()
+      (item) => item.productId.toString() === product._id.toString(),
     );
 
     if (existingItem) {
-
       /* remove old totals */
 
-      purchase.subTotal -= existingItem.purchasePrice * existingItem.quantity;
-      purchase.totalTax -= existingItem.taxAmount;
-      purchase.grandTotal -= existingItem.totalAmount;
+      const oldPriceWithQty =
+        existingItem.purchasePrice * existingItem.quantity;
+
+      const oldTax =
+        (oldPriceWithQty * existingItem.taxPercent) /
+        (100 + existingItem.taxPercent);
+
+      const oldBase = oldPriceWithQty - oldTax;
+
+      purchase.subTotal -= oldBase;
+      purchase.totalTax -= oldTax;
+      purchase.grandTotal -= oldPriceWithQty;
 
       /* increase quantity */
 
       existingItem.quantity += qty;
 
-      /* recalc tax */
+      const newPriceWithQty =
+        existingItem.purchasePrice * existingItem.quantity;
 
       const newTaxAmount =
-        (existingItem.purchasePrice *
-          existingItem.quantity *
-          existingItem.taxPercent) / 100;
+        (newPriceWithQty * existingItem.taxPercent) /
+        (100 + existingItem.taxPercent);
 
-      const newTotalAmount =
-        existingItem.purchasePrice *
-        existingItem.quantity +
-        newTaxAmount;
+      const newBaseAmount = newPriceWithQty - newTaxAmount;
+
+      const newTotalAmount = newPriceWithQty;
 
       existingItem.taxAmount = newTaxAmount;
       existingItem.totalAmount = newTotalAmount;
 
       /* add new totals */
 
-      purchase.subTotal +=
-        existingItem.purchasePrice * existingItem.quantity;
-
+      purchase.subTotal += newBaseAmount;
       purchase.totalTax += newTaxAmount;
-
       purchase.grandTotal += newTotalAmount;
-
     } else {
-
       /* ADD NEW PRODUCT */
 
       purchase.items.push({
-
         productId: product._id,
         productName: product.productName,
         barCode: product.barCode,
@@ -272,13 +260,11 @@ export const addProductByBarcode = async (req, res) => {
         taxAmount,
 
         totalAmount,
-
       });
 
-      purchase.subTotal += purchasePrice * qty;
+      purchase.subTotal += baseAmount;
       purchase.totalTax += taxAmount;
       purchase.grandTotal += totalAmount;
-
     }
 
     /* SAVE PURCHASE */
@@ -294,37 +280,25 @@ export const addProductByBarcode = async (req, res) => {
     await product.save();
 
     res.json({
-
       success: true,
       message: "Product added to purchase invoice",
 
       data: purchase,
-
     });
-
   } catch (error) {
-
     res.status(500).json({
       success: false,
       message: error.message,
     });
-
   }
 };
-
-
-
-
 
 /* ======================================================
    Complete Purchase Invoice
 ====================================================== */
 export const completePurchaseInvoice = async (req, res) => {
-
   try {
-
-    const purchase =
-      await PurchaseInvoice.findById(req.params.id);
+    const purchase = await PurchaseInvoice.findById(req.params.id);
 
     if (!purchase)
       return res.status(404).json({
@@ -347,14 +321,11 @@ export const completePurchaseInvoice = async (req, res) => {
       message: "Purchase invoice completed",
       data: purchase,
     });
-
   } catch (error) {
-
     res.status(500).json({
       success: false,
       message: error.message,
     });
-
   }
 };
 
@@ -362,9 +333,7 @@ export const completePurchaseInvoice = async (req, res) => {
    Remove Product From Purchase
 ====================================================== */
 export const removeProductFromPurchase = async (req, res) => {
-
   try {
-
     const { purchaseId, productId } = req.body;
     const branchId = req.user.branchId;
 
@@ -376,11 +345,9 @@ export const removeProductFromPurchase = async (req, res) => {
         message: "Purchase not found",
       });
 
-    const itemIndex =
-      purchase.items.findIndex(
-        item =>
-          item.productId.toString() === productId
-      );
+    const itemIndex = purchase.items.findIndex(
+      (item) => item.productId.toString() === productId,
+    );
 
     if (itemIndex === -1)
       return res.status(404).json({
@@ -397,16 +364,21 @@ export const removeProductFromPurchase = async (req, res) => {
 
     /* reverse stock */
     if (product) {
-
       product.quantity -= item.quantity;
 
       await product.save();
-
     }
 
-    purchase.subTotal -= item.purchasePrice * item.quantity;
-    purchase.totalTax -= item.taxAmount;
-    purchase.grandTotal -= item.totalAmount;
+    const priceWithQty = item.purchasePrice * item.quantity;
+
+    const taxAmount =
+      (priceWithQty * item.taxPercent) / (100 + item.taxPercent);
+
+    const baseAmount = priceWithQty - taxAmount;
+
+    purchase.subTotal -= baseAmount;
+    purchase.totalTax -= taxAmount;
+    purchase.grandTotal -= priceWithQty;
 
     purchase.items.splice(itemIndex, 1);
 
@@ -417,14 +389,11 @@ export const removeProductFromPurchase = async (req, res) => {
       message: "Product removed",
       data: purchase,
     });
-
   } catch (error) {
-
     res.status(500).json({
       success: false,
       message: error.message,
     });
-
   }
 };
 
@@ -433,14 +402,11 @@ export const removeProductFromPurchase = async (req, res) => {
 ====================================================== */
 export const getPurchaseInvoiceById = async (req, res) => {
   try {
-
     const purchase = await PurchaseInvoice.findById(req.params.id)
-      .populate(
-        "supplierId",
-      )
+      .populate("supplierId")
       .populate(
         "branchId",
-        "branchName branchPhoneNumber address country state city pincode branchCode branchGstNumber"
+        "branchName branchPhoneNumber address country state city pincode branchCode branchGstNumber",
       );
 
     if (!purchase) {
@@ -452,16 +418,13 @@ export const getPurchaseInvoiceById = async (req, res) => {
 
     res.json({
       success: true,
-      data: purchase
+      data: purchase,
     });
-
   } catch (error) {
-
     res.status(500).json({
       success: false,
       message: error.message,
     });
-
   }
 };
 
@@ -469,14 +432,8 @@ export const getPurchaseInvoiceById = async (req, res) => {
    Update Purchase Product Quantity
 ====================================================== */
 export const updatePurchaseProductQuantity = async (req, res) => {
-
   try {
-
-    const {
-      purchaseId,
-      productId,
-      quantity
-    } = req.body;
+    const { purchaseId, productId, quantity } = req.body;
 
     const branchId = req.user.branchId;
 
@@ -502,10 +459,9 @@ export const updatePurchaseProductQuantity = async (req, res) => {
         message: "Cannot modify completed invoice",
       });
 
-    const item =
-      purchase.items.find(
-        i => i.productId.toString() === productId
-      );
+    const item = purchase.items.find(
+      (i) => i.productId.toString() === productId,
+    );
 
     if (!item)
       return res.status(404).json({
@@ -513,11 +469,10 @@ export const updatePurchaseProductQuantity = async (req, res) => {
         message: "Product not in purchase invoice",
       });
 
-    const product =
-      await Product.findOne({
-        _id: productId,
-        branchId,
-      });
+    const product = await Product.findOne({
+      _id: productId,
+      branchId,
+    });
 
     const difference = newQty - item.quantity;
 
@@ -529,21 +484,31 @@ export const updatePurchaseProductQuantity = async (req, res) => {
 
     /* remove old totals */
 
-    purchase.subTotal -= item.purchasePrice * item.quantity;
-    purchase.totalTax -= item.taxAmount;
-    purchase.grandTotal -= item.totalAmount;
+    const oldPriceWithQty = item.purchasePrice * item.quantity;
+
+    const oldTax =
+      (oldPriceWithQty * item.taxPercent) / (100 + item.taxPercent);
+
+    const oldBase = oldPriceWithQty - oldTax;
+
+    purchase.subTotal -= oldBase;
+    purchase.totalTax -= oldTax;
+    purchase.grandTotal -= oldPriceWithQty;
+
+    const priceWithQty = item.purchasePrice * newQty;
 
     const taxAmount =
-      (item.purchasePrice * newQty * item.taxPercent) / 100;
+      (priceWithQty * item.taxPercent) / (100 + item.taxPercent);
 
-    const totalAmount =
-      item.purchasePrice * newQty + taxAmount;
+    const baseAmount = priceWithQty - taxAmount;
+
+    const totalAmount = priceWithQty;
 
     item.quantity = newQty;
     item.taxAmount = taxAmount;
     item.totalAmount = totalAmount;
 
-    purchase.subTotal += item.purchasePrice * newQty;
+    purchase.subTotal += baseAmount;
     purchase.totalTax += taxAmount;
     purchase.grandTotal += totalAmount;
 
@@ -554,14 +519,11 @@ export const updatePurchaseProductQuantity = async (req, res) => {
       message: "Quantity updated",
       data: purchase,
     });
-
   } catch (error) {
-
     res.status(500).json({
       success: false,
       message: error.message,
     });
-
   }
 };
 
@@ -569,11 +531,9 @@ export const updatePurchaseProductQuantity = async (req, res) => {
    Delete Purchase Invoice
 ====================================================== */
 export const deletePurchaseInvoice = async (req, res) => {
-
   const session = await mongoose.startSession();
 
   try {
-
     session.startTransaction();
 
     const purchaseId = req.params.id;
@@ -590,8 +550,7 @@ export const deletePurchaseInvoice = async (req, res) => {
     }
 
     const purchase =
-      await PurchaseInvoice.findById(purchaseId)
-        .session(session);
+      await PurchaseInvoice.findById(purchaseId).session(session);
 
     if (!purchase) {
       await session.abortTransaction();
@@ -616,12 +575,10 @@ export const deletePurchaseInvoice = async (req, res) => {
     /* REMOVE ADDED STOCK */
 
     for (const item of purchase.items) {
-
-      const product =
-        await Product.findOne({
-          _id: item.productId,
-          branchId
-        }).session(session);
+      const product = await Product.findOne({
+        _id: item.productId,
+        branchId,
+      }).session(session);
 
       if (!product) {
         await session.abortTransaction();
@@ -629,19 +586,17 @@ export const deletePurchaseInvoice = async (req, res) => {
 
         return res.status(404).json({
           success: false,
-          message:
-            `Product not found: ${item.productId}`,
+          message: `Product not found: ${item.productId}`,
         });
       }
 
       product.quantity -= item.quantity;
 
       await product.save({ session });
-
     }
 
     await PurchaseInvoice.deleteOne({
-      _id: purchaseId
+      _id: purchaseId,
     }).session(session);
 
     await session.commitTransaction();
@@ -649,12 +604,9 @@ export const deletePurchaseInvoice = async (req, res) => {
 
     res.json({
       success: true,
-      message:
-        "Purchase invoice deleted and stock adjusted",
+      message: "Purchase invoice deleted and stock adjusted",
     });
-
   } catch (error) {
-
     await session.abortTransaction();
     session.endSession();
 
@@ -662,6 +614,5 @@ export const deletePurchaseInvoice = async (req, res) => {
       success: false,
       message: error.message,
     });
-
   }
 };
