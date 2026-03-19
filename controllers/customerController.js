@@ -27,10 +27,12 @@ const handleValidationError = (error, res) => {
 export const createCustomer = async (req, res) => {
   try {
     const userId = req.user._id;
+    const branchId = req.user.branchId;
 
     const customer = await Customer.create({
       ...req.body,
       userId,
+      branchId,
     });
 
     res.status(201).json({
@@ -44,15 +46,15 @@ export const createCustomer = async (req, res) => {
 };
 
 /* ======================================================
-   Get All Customers
+   Get All Customers (branch based)
 ====================================================== */
 export const getCustomers = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const branchId = req.user.branchId;
 
-    const customers = await Customer.find({ userId }).sort({
-      createdAt: -1,
-    });
+    const customers = await Customer.find({ branchId })
+      .sort({ createdAt: -1 })
+      .populate("userId", "name email") 
 
     res.json({
       success: true,
@@ -73,7 +75,7 @@ export const getCustomers = async (req, res) => {
 export const getCustomerById = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user._id;
+    const branchId = req.user.branchId;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -82,7 +84,10 @@ export const getCustomerById = async (req, res) => {
       });
     }
 
-    const customer = await Customer.findOne({ _id: id, userId });
+    const customer = await Customer.findOne({
+      _id: id,
+      branchId,
+    }).populate("userId", "name email");
 
     if (!customer) {
       return res.status(404).json({
@@ -109,7 +114,7 @@ export const getCustomerById = async (req, res) => {
 export const updateCustomer = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user._id;
+    const branchId = req.user.branchId;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -118,7 +123,10 @@ export const updateCustomer = async (req, res) => {
       });
     }
 
-    const customer = await Customer.findOne({ _id: id, userId });
+    const customer = await Customer.findOne({
+      _id: id,
+      branchId,
+    });
 
     if (!customer) {
       return res.status(404).json({
@@ -147,7 +155,7 @@ export const updateCustomer = async (req, res) => {
 export const deleteCustomer = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user._id;
+    const branchId = req.user.branchId;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -156,7 +164,10 @@ export const deleteCustomer = async (req, res) => {
       });
     }
 
-    const customer = await Customer.findOne({ _id: id, userId });
+    const customer = await Customer.findOne({
+      _id: id,
+      branchId,
+    });
 
     if (!customer) {
       return res.status(404).json({

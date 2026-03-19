@@ -2,6 +2,12 @@ import mongoose from "mongoose";
 
 const SupplierSchema = new mongoose.Schema(
   {
+    branchId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Branch",
+      required: true,
+    },
+
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -60,9 +66,8 @@ const SupplierSchema = new mongoose.Schema(
       required: [true, "GST is required"],
       trim: true,
     },
-
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.models.Supplier ||

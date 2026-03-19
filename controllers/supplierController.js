@@ -30,10 +30,12 @@ export const createSupplier = async (req, res) => {
   try {
 
     const userId = req.user._id;
+    const branchId = req.user.branchId;
 
     const supplier = await Supplier.create({
       ...req.body,
       userId,
+      branchId,
     });
 
     res.status(201).json({
@@ -49,15 +51,16 @@ export const createSupplier = async (req, res) => {
 
 
 /* ======================================================
-   Get All Suppliers
+   Get All Suppliers (branch based)
 ====================================================== */
 export const getSuppliers = async (req, res) => {
   try {
 
-    const userId = req.user._id;
+    const branchId = req.user.branchId;
 
-    const suppliers = await Supplier.find({ userId })
-      .sort({ createdAt: -1 });
+    const suppliers = await Supplier.find({ branchId })
+      .sort({ createdAt: -1 })
+      .populate("userId", "name email");
 
     res.json({
       success: true,
@@ -81,7 +84,7 @@ export const getSupplierById = async (req, res) => {
   try {
 
     const { id } = req.params;
-    const userId = req.user._id;
+    const branchId = req.user.branchId;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -92,8 +95,8 @@ export const getSupplierById = async (req, res) => {
 
     const supplier = await Supplier.findOne({
       _id: id,
-      userId,
-    });
+      branchId,
+    }).populate("userId", "name email");
 
     if (!supplier) {
       return res.status(404).json({
@@ -123,7 +126,7 @@ export const updateSupplier = async (req, res) => {
   try {
 
     const { id } = req.params;
-    const userId = req.user._id;
+    const branchId = req.user.branchId;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -134,7 +137,7 @@ export const updateSupplier = async (req, res) => {
 
     const supplier = await Supplier.findOne({
       _id: id,
-      userId,
+      branchId,
     });
 
     if (!supplier) {
@@ -167,7 +170,7 @@ export const deleteSupplier = async (req, res) => {
   try {
 
     const { id } = req.params;
-    const userId = req.user._id;
+    const branchId = req.user.branchId;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -178,7 +181,7 @@ export const deleteSupplier = async (req, res) => {
 
     const supplier = await Supplier.findOne({
       _id: id,
-      userId,
+      branchId,
     });
 
     if (!supplier) {
