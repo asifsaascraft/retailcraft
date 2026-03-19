@@ -616,3 +616,30 @@ export const deletePurchaseInvoice = async (req, res) => {
     });
   }
 };
+
+/* ======================================================
+   Get All Purchase Invoices
+====================================================== */
+export const getCompletedPurchaseInvoices = async (req, res) => {
+  try {
+    const branchId = req.user.branchId;
+
+    const purchases = await PurchaseInvoice.find({
+      branchId,
+      status: "Completed",
+    })
+      .sort({ createdAt: -1 })
+      .populate("supplierId");
+
+    res.json({
+      success: true,
+      count: purchases.length,
+      data: purchases,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch completed purchase invoices",
+    });
+  }
+};

@@ -8,6 +8,7 @@ import {
   removeProductFromBilling,
   updateProductQuantity,
   deleteBilling,
+  getCompletedBillings,
 } from "../controllers/billingController.js";
 
 import { protectUser }
@@ -28,6 +29,10 @@ router.post("/remove-product", removeProductFromBilling);
 
 router.put("/update-quantity", updateProductQuantity);
 
+router.get(
+  "/complete/all",
+  getCompletedBillings
+);
 
 router.post(
   "/complete/:id",

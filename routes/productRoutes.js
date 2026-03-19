@@ -9,6 +9,7 @@ import {
   reduceStock,
   getLowStock,
   getStockSummary,
+  searchProducts,
 } from "../controllers/productController.js";
 
 import { protectUser } from "../middlewares/userAuth.js";
@@ -38,6 +39,7 @@ GET /products?status=All
 */
 
 // Product
+router.get("/search", searchProducts);
 router.get("/", getAllProductsWithStatus);
 router.get("/:id", getProductById);
 router.post("/", createProduct);

@@ -7,7 +7,8 @@ import {
   updatePurchaseProductQuantity,
   getPurchaseInvoiceById,
   completePurchaseInvoice,
-  deletePurchaseInvoice
+  deletePurchaseInvoice,
+  getCompletedPurchaseInvoices,
 } from "../controllers/purchaseInvoiceController.js";
 
 import { protectUser } from "../middlewares/userAuth.js";
@@ -24,9 +25,12 @@ router.post("/remove-product", removeProductFromPurchase);
 
 router.put("/update-quantity", updatePurchaseProductQuantity);
 
-router.get("/:id", getPurchaseInvoiceById);
+router.get("/complete/all", getCompletedPurchaseInvoices);
 
 router.post("/complete/:id", completePurchaseInvoice);
+
+router.get("/:id", getPurchaseInvoiceById);
+
 
 router.delete("/:id", deletePurchaseInvoice);
 

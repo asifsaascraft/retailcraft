@@ -542,3 +542,40 @@ export const getStockSummary = async (req, res) => {
     totalStock: stock[0]?.totalStock || 0,
   });
 };
+
+/* ======================================================
+   SEARCH PRODUCTS (name + barcode)
+====================================================== */
+export const searchProducts = async (req, res) => {
+  try {
+    const branchId = req.user.branchId;
+    const { search } = req.query;
+
+    if (!search) {
+      return res.status(400).json({
+        success: false,
+        message: "Search query is required",
+      });
+    }
+
+    const products = await Product.find({
+      branchId,
+      status: "Active",
+      $or: [
+        { productName: { $regex: search, $options: "i" } },
+        { barCode: { $regex: search, $options: "i" } },
+      ],
+    }).sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: products.length,
+      data: products,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};

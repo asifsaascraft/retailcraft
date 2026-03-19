@@ -639,3 +639,30 @@ export const deleteBilling = async (req, res) => {
     });
   }
 };
+
+/* ======================================================
+   Get All Completed Billing
+====================================================== */
+export const getCompletedBillings = async (req, res) => {
+  try {
+    const branchId = req.user.branchId;
+
+    const billings = await Billing.find({
+      branchId,
+      status: "Completed",
+    })
+      .sort({ createdAt: -1 })
+      .populate("customerId", "customerType name email mobile");
+
+    res.json({
+      success: true,
+      count: billings.length,
+      data: billings,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch completed billings",
+    });
+  }
+};
