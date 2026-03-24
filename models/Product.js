@@ -109,22 +109,13 @@ const ProductSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ["Active", "Inactive"],
-      default: "Inactive",
+      default: "Active",
       required: true,
     },
   },
   { timestamps: true },
 );
 
-/* ============================================
-   AUTO STATUS BASED ON QUANTITY
-============================================ */
-ProductSchema.pre("save", function (next) {
-  if (this.quantity > 0) this.status = "Active";
-  else this.status = "Inactive";
-
-  next();
-});
 
 ProductSchema.index({ branchId: 1, barCode: 1 });
 

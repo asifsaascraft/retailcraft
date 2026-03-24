@@ -41,8 +41,8 @@ GET /products?status=All
 // Product
 router.get("/search", searchProducts);
 router.get("/", getAllProductsWithStatus);
-router.get("/:id", getProductById);
 router.post("/", createProduct);
+router.get("/:id", getProductById);
 router.put("/:id", updateProduct);
 router.delete("/:id", deleteProduct);
 
