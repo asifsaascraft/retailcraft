@@ -126,16 +126,7 @@ ProductSchema.pre("save", function (next) {
   next();
 });
 
-/* ============================================
-   INDEXES (UNCHANGED)
-============================================ */
-
-ProductSchema.index({ branchId: 1, barCode: 1 }, { unique: true });
-
-ProductSchema.index(
-  { branchId: 1, productName: 1, color: 1, size: 1 },
-  { unique: true },
-);
+ProductSchema.index({ branchId: 1, barCode: 1 });
 
 export default mongoose.models.Product ||
   mongoose.model("Product", ProductSchema);

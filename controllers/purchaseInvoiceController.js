@@ -166,16 +166,52 @@ export const addProductByBarcode = async (req, res) => {
         message: "Invoice already completed. Cannot add more products.",
       });
 
-    const product = await Product.findOne({
+    const products = await Product.find({
       branchId,
       barCode,
     });
 
-    if (!product)
+    if (!products.length) {
       return res.status(404).json({
         success: false,
         message: "Product not found",
       });
+    }
+
+    /* ===============================
+       MULTIPLE PRODUCT CASE
+    =============================== */
+
+    if (products.length > 1 && !req.body.productId) {
+      return res.json({
+        success: true,
+        multiple: true,
+        message: "Multiple products found, please select one",
+        data: products,
+      });
+    }
+
+    /* ===============================
+       SELECT PRODUCT
+    =============================== */
+
+    let product;
+
+    if (req.body.productId) {
+      product = await Product.findOne({
+        _id: req.body.productId,
+        branchId,
+      });
+    } else {
+      product = products[0];
+    }
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Selected product not found",
+      });
+    }
 
     /* =============================
        PURCHASE PRICE

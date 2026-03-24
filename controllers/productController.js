@@ -15,22 +15,6 @@ const handleValidationError = (error, res) => {
   }
 
   if (error.code === 11000) {
-    const field = Object.keys(error.keyValue)[0];
-
-    if (field === "productName") {
-      return res.status(400).json({
-        success: false,
-        message: "Product with this name already exists",
-      });
-    }
-
-    if (field === "barCode") {
-      return res.status(400).json({
-        success: false,
-        message: "Product already exists with same barcode",
-      });
-    }
-
     return res.status(400).json({
       success: false,
       message: "Duplicate value detected",

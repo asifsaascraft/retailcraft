@@ -91,16 +91,61 @@ export const addProductByBarcode = async (req, res) => {
 
     const customer = await Customer.findById(billing.customerId);
 
-    const product = await Product.findOne({
+    const products = await Product.find({
       branchId,
       barCode,
+      status: "Active",
     });
 
-    if (!product)
+    if (!products.length) {
       return res.status(404).json({
         success: false,
         message: "Product not found",
       });
+    }
+
+    /* ===============================
+       MULTIPLE PRODUCT CASE
+    =============================== */
+
+    if (products.length > 1 && !req.body.productId) {
+      return res.json({
+        success: true,
+        multiple: true,
+        message: "Multiple products found, please select one",
+        data: products.map((p) => ({
+          _id: p._id,
+          productName: p.productName,
+          barCode: p.barCode,
+          b2bSalePrice: p.b2bSalePrice,
+          b2cSalePrice: p.b2cSalePrice,
+          purchasePrice: p.purchasePrice,
+          quantity: p.quantity,
+        })),
+      });
+    }
+
+    /* ===============================
+       SELECT PRODUCT
+    =============================== */
+
+    let product;
+
+    if (req.body.productId) {
+      product = await Product.findOne({
+        _id: req.body.productId,
+        branchId,
+      });
+    } else {
+      product = products[0];
+    }
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Selected product not found",
+      });
+    }
 
     /* =============================
        STOCK CHECK
