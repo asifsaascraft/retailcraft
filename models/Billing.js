@@ -97,6 +97,24 @@ const BillingSchema = new mongoose.Schema(
       default: 0,
     },
 
+    /* ===============================
+       DISCOUNT 
+    =============================== */
+    discount: {
+      type: Number, // percentage
+      default: 0,
+    },
+
+    discountAmount: {
+      type: Number,
+      default: 0,
+    },
+
+    finalTotal: {
+      type: Number,
+      default: 0,
+    },
+
     status: {
       type: String,
       enum: ["Draft", "Completed"],

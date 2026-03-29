@@ -334,6 +334,8 @@ export const addProductByBarcode = async (req, res) => {
 ====================================================== */
 export const completePurchaseInvoice = async (req, res) => {
   try {
+    const { discount = 0 } = req.body;
+
     const purchase = await PurchaseInvoice.findById(req.params.id);
 
     if (!purchase)
@@ -348,13 +350,42 @@ export const completePurchaseInvoice = async (req, res) => {
         message: "Invoice already completed",
       });
 
+    /* =========================
+       DISCOUNT VALIDATION
+    ========================== */
+
+    const discountValue = Number(discount);
+
+    if (isNaN(discountValue) || discountValue < 0 || discountValue > 100)
+      return res.status(400).json({
+        success: false,
+        message: "Discount must be between 0 to 100",
+      });
+
+    /* =========================
+       CALCULATE DISCOUNT
+    ========================== */
+
+    const discountAmount =
+      (purchase.grandTotal * discountValue) / 100;
+
+    const finalTotal =
+      purchase.grandTotal - discountAmount;
+
+    /* =========================
+       UPDATE PURCHASE
+    ========================== */
+
+    purchase.discount = discountValue;
+    purchase.discountAmount = discountAmount;
+    purchase.finalTotal = finalTotal;
     purchase.status = "Completed";
 
     await purchase.save();
 
     res.json({
       success: true,
-      message: "Purchase invoice completed",
+      message: "Purchase invoice completed successfully",
       data: purchase,
     });
   } catch (error) {

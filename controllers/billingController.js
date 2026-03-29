@@ -354,7 +354,7 @@ export const getBillingById = async (req, res) => {
 ====================================================== */
 export const completeBilling = async (req, res) => {
   try {
-    const { paymentMode } = req.body;
+    const { paymentMode, discount = 0 } = req.body;
 
     const billing = await Billing.findById(req.params.id);
 
@@ -382,15 +382,43 @@ export const completeBilling = async (req, res) => {
         message: "Valid paymentMode is required (UPI, Debit/Credit Card, Cash)",
       });
 
-    billing.paymentMode = paymentMode;
+    /* =========================
+       DISCOUNT VALIDATION
+    ========================== */
 
+    const discountValue = Number(discount);
+
+    if (isNaN(discountValue) || discountValue < 0 || discountValue > 100)
+      return res.status(400).json({
+        success: false,
+        message: "Discount must be between 0 to 100",
+      });
+
+    /* =========================
+       CALCULATE DISCOUNT
+    ========================== */
+
+    const discountAmount =
+      (billing.grandTotal * discountValue) / 100;
+
+    const finalTotal =
+      billing.grandTotal - discountAmount;
+
+    /* =========================
+       UPDATE BILLING
+    ========================== */
+
+    billing.paymentMode = paymentMode;
+    billing.discount = discountValue;
+    billing.discountAmount = discountAmount;
+    billing.finalTotal = finalTotal;
     billing.status = "Completed";
 
     await billing.save();
 
     res.json({
       success: true,
-      message: "Invoice completed",
+      message: "Invoice completed successfully",
       data: billing,
     });
   } catch (error) {
