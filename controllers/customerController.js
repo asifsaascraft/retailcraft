@@ -29,6 +29,14 @@ export const createCustomer = async (req, res) => {
     const userId = req.user._id;
     const branchId = req.user.branchId;
 
+    //  Manual check (better UX)
+    if (!req.body.mobile) {
+      return res.status(400).json({
+        success: false,
+        message: "Mobile number is required",
+      });
+    }
+
     const customer = await Customer.create({
       ...req.body,
       userId,
@@ -132,6 +140,14 @@ export const updateCustomer = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "Customer not found",
+      });
+    }
+
+    //  Prevent removing mobile
+    if ("mobile" in req.body && !req.body.mobile) {
+      return res.status(400).json({
+        success: false,
+        message: "Mobile number is required",
       });
     }
 

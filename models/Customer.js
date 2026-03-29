@@ -7,7 +7,7 @@ const CustomerSchema = new mongoose.Schema(
       ref: "Branch",
       required: true,
     },
-    
+
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -39,8 +39,15 @@ const CustomerSchema = new mongoose.Schema(
 
     mobile: {
       type: String,
+      required: [true, "Mobile number is required"],
       match: [/^\d{10}$/, "Mobile must be 10 digits"],
       trim: true,
+      validate: {
+        validator: function (v) {
+          return v && v.length > 0;
+        },
+        message: "Mobile number cannot be empty",
+      },
     },
 
     address: {
