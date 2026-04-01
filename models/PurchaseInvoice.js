@@ -48,7 +48,7 @@ const PurchaseItemSchema = new mongoose.Schema(
       required: true,
     },
   },
-  { _id: false }
+  { _id: false },
 );
 
 /* ======================================================
@@ -96,7 +96,6 @@ const PurchaseInvoiceSchema = new mongoose.Schema(
       required: true,
     },
 
-
     items: [PurchaseItemSchema],
 
     subTotal: {
@@ -132,13 +131,19 @@ const PurchaseInvoiceSchema = new mongoose.Schema(
       default: 0,
     },
 
+    // this is a double number (like amount 4.50)
+    freightCharge: {
+      type: Number,
+      default: 0,
+    },
+
     status: {
       type: String,
       enum: ["Draft", "Completed"],
       default: "Draft",
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.models.PurchaseInvoice ||

@@ -22,6 +22,7 @@ const ProductSchema = new mongoose.Schema(
 
     itemCode: {
       type: String,
+      required: [true, "Item code is required"],
       trim: true,
     },
 
@@ -69,6 +70,7 @@ const ProductSchema = new mongoose.Schema(
 
     hsnCode: {
       type: String,
+      required: [true, "HSN code is required"],
       trim: true,
     },
 

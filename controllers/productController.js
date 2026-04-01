@@ -61,6 +61,18 @@ export const createProduct = async (req, res) => {
         message: "Product name is required",
       });
 
+    if (!itemCode)
+      return res.status(400).json({
+        success: false,
+        message: "Item code is required",
+      });
+
+    if (!hsnCode)
+      return res.status(400).json({
+        success: false,
+        message: "HSN code is required",
+      });
+
     if (!barCode)
       return res.status(400).json({
         success: false,
@@ -326,6 +338,22 @@ export const updateProduct = async (req, res) => {
     delete req.body.quantity;
     delete req.body.status;
 
+    /* =============================
+   EMPTY FIELD VALIDATION
+============================= */
+
+    if (req.body.itemCode === "")
+      return res.status(400).json({
+        success: false,
+        message: "Item code cannot be empty",
+      });
+
+    if (req.body.hsnCode === "")
+      return res.status(400).json({
+        success: false,
+        message: "HSN code cannot be empty",
+      });
+
     Object.assign(product, req.body);
 
     await product.save();
@@ -528,7 +556,7 @@ export const getStockSummary = async (req, res) => {
 };
 
 /* ======================================================
-   SEARCH PRODUCTS (name + barcode)
+   SEARCH PRODUCTS (name + barcode + itemCode)
 ====================================================== */
 export const searchProducts = async (req, res) => {
   try {
@@ -548,6 +576,7 @@ export const searchProducts = async (req, res) => {
       $or: [
         { productName: { $regex: search, $options: "i" } },
         { barCode: { $regex: search, $options: "i" } },
+        { itemCode: { $regex: search, $options: "i" } }, 
       ],
     }).sort({ createdAt: -1 });
 

@@ -220,18 +220,16 @@ export const addProductByBarcode = async (req, res) => {
     const purchasePrice = product.purchasePrice;
 
     /* =============================
-       TAX CALCULATION
+       TAX CALCULATION (TAX ADDED)
     ============================== */
 
     const taxPercent = product.purchaseTax || 0;
 
-    const priceWithQty = purchasePrice * qty;
+    const baseAmount = purchasePrice * qty;
 
-    const taxAmount = (priceWithQty * taxPercent) / (100 + taxPercent);
+    const taxAmount = (baseAmount * taxPercent) / 100;
 
-    const baseAmount = priceWithQty - taxAmount;
-
-    const totalAmount = priceWithQty;
+    const totalAmount = baseAmount + taxAmount;
 
     /* =============================
        CHECK IF PRODUCT ALREADY EXISTS
@@ -244,52 +242,40 @@ export const addProductByBarcode = async (req, res) => {
     if (existingItem) {
       /* remove old totals */
 
-      const oldPriceWithQty =
-        existingItem.purchasePrice * existingItem.quantity;
+      const oldBase = existingItem.purchasePrice * existingItem.quantity;
 
-      const oldTax =
-        (oldPriceWithQty * existingItem.taxPercent) /
-        (100 + existingItem.taxPercent);
+      const oldTax = (oldBase * existingItem.taxPercent) / 100;
 
-      const oldBase = oldPriceWithQty - oldTax;
+      const oldTotal = oldBase + oldTax;
 
       purchase.subTotal -= oldBase;
       purchase.totalTax -= oldTax;
-      purchase.grandTotal -= oldPriceWithQty;
+      purchase.grandTotal -= oldTotal;
 
       /* increase quantity */
-
       existingItem.quantity += qty;
 
-      const newPriceWithQty =
-        existingItem.purchasePrice * existingItem.quantity;
+      const newBase = existingItem.purchasePrice * existingItem.quantity;
 
-      const newTaxAmount =
-        (newPriceWithQty * existingItem.taxPercent) /
-        (100 + existingItem.taxPercent);
+      const newTax = (newBase * existingItem.taxPercent) / 100;
 
-      const newBaseAmount = newPriceWithQty - newTaxAmount;
+      const newTotal = newBase + newTax;
 
-      const newTotalAmount = newPriceWithQty;
-
-      existingItem.taxAmount = newTaxAmount;
-      existingItem.totalAmount = newTotalAmount;
+      existingItem.taxPercent = taxPercent;
+      existingItem.taxAmount = newTax;
+      existingItem.totalAmount = newTotal;
 
       /* add new totals */
-
-      purchase.subTotal += newBaseAmount;
-      purchase.totalTax += newTaxAmount;
-      purchase.grandTotal += newTotalAmount;
+      purchase.subTotal += newBase;
+      purchase.totalTax += newTax;
+      purchase.grandTotal += newTotal;
     } else {
-      /* ADD NEW PRODUCT */
-
       purchase.items.push({
         productId: product._id,
         productName: product.productName,
         barCode: product.barCode,
 
         quantity: qty,
-
         purchasePrice,
 
         taxPercent,
@@ -334,7 +320,7 @@ export const addProductByBarcode = async (req, res) => {
 ====================================================== */
 export const completePurchaseInvoice = async (req, res) => {
   try {
-    const { discount = 0 } = req.body;
+    const { discount = 0, freightCharge = 0 } = req.body;
 
     const purchase = await PurchaseInvoice.findById(req.params.id);
 
@@ -363,14 +349,30 @@ export const completePurchaseInvoice = async (req, res) => {
       });
 
     /* =========================
+       FREIGHT VALIDATION
+    ========================== */
+
+    const freightValue = Number(freightCharge);
+
+    if (isNaN(freightValue) || freightValue < 0)
+      return res.status(400).json({
+        success: false,
+        message: "Freight charge must be a valid number ≥ 0",
+      });
+
+    /* =========================
        CALCULATE DISCOUNT
     ========================== */
 
     const discountAmount =
       (purchase.grandTotal * discountValue) / 100;
 
+    /* =========================
+       FINAL TOTAL CALCULATION
+    ========================== */
+
     const finalTotal =
-      purchase.grandTotal - discountAmount;
+      purchase.grandTotal - discountAmount + freightValue;
 
     /* =========================
        UPDATE PURCHASE
@@ -378,6 +380,9 @@ export const completePurchaseInvoice = async (req, res) => {
 
     purchase.discount = discountValue;
     purchase.discountAmount = discountAmount;
+
+    purchase.freightCharge = freightValue; 
+
     purchase.finalTotal = finalTotal;
     purchase.status = "Completed";
 
@@ -436,17 +441,15 @@ export const removeProductFromPurchase = async (req, res) => {
       await product.save();
     }
 
-    const priceWithQty = item.purchasePrice * item.quantity;
+    const baseAmount = item.purchasePrice * item.quantity;
 
-    const taxAmount =
-      (priceWithQty * item.taxPercent) / (100 + item.taxPercent);
+    const taxAmount = (baseAmount * item.taxPercent) / 100;
 
-    const baseAmount = priceWithQty - taxAmount;
+    const totalAmount = baseAmount + taxAmount;
 
     purchase.subTotal -= baseAmount;
     purchase.totalTax -= taxAmount;
-    purchase.grandTotal -= priceWithQty;
-
+    purchase.grandTotal -= totalAmount;
     purchase.items.splice(itemIndex, 1);
 
     await purchase.save();
@@ -551,29 +554,29 @@ export const updatePurchaseProductQuantity = async (req, res) => {
 
     /* remove old totals */
 
-    const oldPriceWithQty = item.purchasePrice * item.quantity;
+    const oldBase = item.purchasePrice * item.quantity;
 
-    const oldTax =
-      (oldPriceWithQty * item.taxPercent) / (100 + item.taxPercent);
+    const oldTax = (oldBase * item.taxPercent) / 100;
 
-    const oldBase = oldPriceWithQty - oldTax;
+    const oldTotal = oldBase + oldTax;
 
     purchase.subTotal -= oldBase;
     purchase.totalTax -= oldTax;
-    purchase.grandTotal -= oldPriceWithQty;
+    purchase.grandTotal -= oldTotal;
 
-    const priceWithQty = item.purchasePrice * newQty;
+    /* recalculate */
 
-    const taxAmount =
-      (priceWithQty * item.taxPercent) / (100 + item.taxPercent);
+    const baseAmount = item.purchasePrice * newQty;
 
-    const baseAmount = priceWithQty - taxAmount;
+    const taxAmount = (baseAmount * item.taxPercent) / 100;
 
-    const totalAmount = priceWithQty;
+    const totalAmount = baseAmount + taxAmount;
 
     item.quantity = newQty;
     item.taxAmount = taxAmount;
     item.totalAmount = totalAmount;
+
+    /* add new totals */
 
     purchase.subTotal += baseAmount;
     purchase.totalTax += taxAmount;

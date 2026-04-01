@@ -354,7 +354,7 @@ export const getBillingById = async (req, res) => {
 ====================================================== */
 export const completeBilling = async (req, res) => {
   try {
-    const { paymentMode, discount = 0 } = req.body;
+    const { paymentMode, discount = 0, freightCharge = 0 } = req.body;
 
     const billing = await Billing.findById(req.params.id);
 
@@ -374,13 +374,27 @@ export const completeBilling = async (req, res) => {
        PAYMENT MODE VALIDATION
     ========================== */
 
-    const validPaymentModes = ["UPI", "Debit/Credit Card", "Cash"];
+    const validPaymentModes = ["UPI", "Debit/Credit Card", "Cash", "Pay Later"];
 
     if (!paymentMode || !validPaymentModes.includes(paymentMode))
       return res.status(400).json({
         success: false,
-        message: "Valid paymentMode is required (UPI, Debit/Credit Card, Cash)",
+        message:
+          "Valid paymentMode is required (UPI, Debit/Credit Card, Cash, Pay Later)",
       });
+
+    /* =========================
+   PAY LATER VALIDATION
+========================= */
+
+    if (paymentMode === "Pay Later") {
+      if (!req.body.remarks || !req.body.remarks.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: "Remarks is required when payment mode is Pay Later",
+        });
+      }
+    }
 
     /* =========================
        DISCOUNT VALIDATION
@@ -395,22 +409,35 @@ export const completeBilling = async (req, res) => {
       });
 
     /* =========================
+    FREIGHT VALIDATION
+    ========================= */
+
+    const freightValue = Number(freightCharge);
+
+    if (isNaN(freightValue) || freightValue < 0)
+      return res.status(400).json({
+        success: false,
+        message: "Freight charge must be a valid number ≥ 0",
+      });
+
+    /* =========================
        CALCULATE DISCOUNT
     ========================== */
 
-    const discountAmount =
-      (billing.grandTotal * discountValue) / 100;
+    const discountAmount = (billing.grandTotal * discountValue) / 100;
 
-    const finalTotal =
-      billing.grandTotal - discountAmount;
+    const finalTotal = billing.grandTotal - discountAmount + freightValue;
 
     /* =========================
        UPDATE BILLING
     ========================== */
 
     billing.paymentMode = paymentMode;
+    billing.remarks =
+      paymentMode === "Pay Later" ? req.body.remarks.trim() : "";
     billing.discount = discountValue;
     billing.discountAmount = discountAmount;
+    billing.freightCharge = freightValue;
     billing.finalTotal = finalTotal;
     billing.status = "Completed";
 

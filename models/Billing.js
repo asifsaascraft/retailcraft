@@ -115,6 +115,12 @@ const BillingSchema = new mongoose.Schema(
       default: 0,
     },
 
+    // this is a double number (like amount 4.50)
+    freightCharge: {
+      type: Number,
+      default: 0,
+    },
+
     status: {
       type: String,
       enum: ["Draft", "Completed"],
@@ -123,8 +129,11 @@ const BillingSchema = new mongoose.Schema(
 
     paymentMode: {
       type: String,
-      enum: ["UPI", "Debit/Credit Card", "Cash"],
+      enum: ["UPI", "Debit/Credit Card", "Cash", "Pay Later"],
     },
+    remarks: {
+      type: String,
+    }
   },
   { timestamps: true }
 );
