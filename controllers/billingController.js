@@ -424,9 +424,10 @@ export const completeBilling = async (req, res) => {
        CALCULATE DISCOUNT
     ========================== */
 
-    const discountAmount = (billing.grandTotal * discountValue) / 100;
+    const discountAmount = (billing.subTotal * discountValue) / 100;
 
-    const finalTotal = billing.grandTotal - discountAmount + freightValue;
+    const finalTotal =
+      billing.subTotal - discountAmount + billing.totalTax + freightValue;
 
     /* =========================
        UPDATE BILLING
