@@ -30,6 +30,7 @@ const ProductSchema = new mongoose.Schema(
       type: String,
       required: [true, "Barcode is required"],
       trim: true,
+      match: [/^\d+$/, "Barcode must contain only numbers"],
     },
 
     color: {
@@ -40,27 +41,8 @@ const ProductSchema = new mongoose.Schema(
 
     size: {
       type: String,
-      enum: [
-        "XXXS",
-        "XXS",
-        "XS",
-        "S",
-        "M",
-        "L",
-        "XL",
-        "XXL",
-        "XXXL",
-        "4XL",
-        "5XL",
-        "6XL",
-        "7XL",
-        "8XL",
-        "9XL",
-        "10XL",
-        "FREE",
-        "CUSTOM",
-      ],
       required: [true, "Size is required"],
+      trim: true,
     },
     quantity: {
       type: Number,
@@ -117,7 +99,6 @@ const ProductSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
-
 
 ProductSchema.index({ branchId: 1, barCode: 1 });
 

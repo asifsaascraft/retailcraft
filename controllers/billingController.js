@@ -440,6 +440,7 @@ export const completeBilling = async (req, res) => {
     billing.freightCharge = freightValue;
     billing.finalTotal = finalTotal;
     billing.status = "Completed";
+    billing.paymentStatus = paymentMode === "Pay Later" ? "Pending" : "Paid";
 
     await billing.save();
 
@@ -763,6 +764,47 @@ export const getCompletedBillings = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to fetch completed billings",
+    });
+  }
+};
+
+/* ======================================================
+   Updated Completed Billing Payment Status
+====================================================== */
+export const updateBillingPaymentStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { paymentStatus } = req.body;
+
+    const validStatus = ["Pending", "Paid"];
+
+    if (!validStatus.includes(paymentStatus))
+      return res.status(400).json({
+        success: false,
+        message: "Invalid payment status",
+      });
+
+    const billing = await Billing.findById(id);
+
+    if (!billing)
+      return res.status(404).json({
+        success: false,
+        message: "Billing not found",
+      });
+
+    billing.paymentStatus = paymentStatus;
+
+    await billing.save();
+
+    res.json({
+      success: true,
+      message: "Payment status updated",
+      data: billing,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
     });
   }
 };

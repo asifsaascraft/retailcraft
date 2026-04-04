@@ -11,13 +11,7 @@ export const createPurchaseInvoice = async (req, res) => {
     const userId = req.user._id;
     const branchId = req.user.branchId;
 
-    const {
-      supplierId,
-      invoiceNumber,
-      invoiceDate,
-      placeOfSupply,
-      reverseCharge,
-    } = req.body;
+    const { supplierId, invoiceNumber, invoiceDate, placeOfSupply } = req.body;
 
     /* =========================
        VALIDATE SUPPLIER ID
@@ -64,17 +58,6 @@ export const createPurchaseInvoice = async (req, res) => {
     }
 
     /* =========================
-       VALIDATE REVERSE CHARGE
-    ========================== */
-
-    if (!reverseCharge || reverseCharge.trim() === "") {
-      return res.status(400).json({
-        success: false,
-        message: "Reverse charge is required",
-      });
-    }
-
-    /* =========================
        CHECK SUPPLIER
     ========================== */
 
@@ -114,7 +97,6 @@ export const createPurchaseInvoice = async (req, res) => {
       invoiceNumber,
       invoiceDate,
       placeOfSupply,
-      reverseCharge,
 
       items: [],
       subTotal: 0,
@@ -320,7 +302,7 @@ export const addProductByBarcode = async (req, res) => {
 ====================================================== */
 export const completePurchaseInvoice = async (req, res) => {
   try {
-    const { discount = 0, freightCharge = 0 } = req.body;
+    const { paymentMode, discount = 0, freightCharge = 0 } = req.body;
 
     const purchase = await PurchaseInvoice.findById(req.params.id);
 
@@ -335,6 +317,32 @@ export const completePurchaseInvoice = async (req, res) => {
         success: false,
         message: "Invoice already completed",
       });
+
+    /* =========================
+       PAYMENT MODE VALIDATION
+    ========================== */
+
+    const validPaymentModes = ["UPI", "Debit/Credit Card", "Cash", "Pay Later"];
+
+    if (!paymentMode || !validPaymentModes.includes(paymentMode))
+      return res.status(400).json({
+        success: false,
+        message:
+          "Valid paymentMode is required (UPI, Debit/Credit Card, Cash, Pay Later)",
+      });
+
+    /* =========================
+    PAY LATER VALIDATION
+    ========================= */
+
+    if (paymentMode === "Pay Later") {
+      if (!req.body.remarks || !req.body.remarks.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: "Remarks is required when payment mode is Pay Later",
+        });
+      }
+    }
 
     /* =========================
        DISCOUNT VALIDATION
@@ -364,27 +372,30 @@ export const completePurchaseInvoice = async (req, res) => {
        CALCULATE DISCOUNT
     ========================== */
 
-    const discountAmount =
-      (purchase.grandTotal * discountValue) / 100;
+    const discountAmount = (purchase.subTotal * discountValue) / 100;
 
     /* =========================
        FINAL TOTAL CALCULATION
     ========================== */
 
     const finalTotal =
-      purchase.grandTotal - discountAmount + freightValue;
+      purchase.subTotal - discountAmount + purchase.totalTax + freightValue;
 
     /* =========================
        UPDATE PURCHASE
     ========================== */
 
+    purchase.paymentMode = paymentMode;
+    purchase.remarks =
+      paymentMode === "Pay Later" ? req.body.remarks.trim() : "";
     purchase.discount = discountValue;
     purchase.discountAmount = discountAmount;
 
-    purchase.freightCharge = freightValue; 
+    purchase.freightCharge = freightValue;
 
     purchase.finalTotal = finalTotal;
     purchase.status = "Completed";
+    purchase.paymentStatus = paymentMode === "Pay Later" ? "Pending" : "Paid";
 
     await purchase.save();
 
@@ -710,6 +721,47 @@ export const getCompletedPurchaseInvoices = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to fetch completed purchase invoices",
+    });
+  }
+};
+
+/* ======================================================
+   Updated Completed Purchase Invoice Payment Status
+====================================================== */
+export const updatePurchasePaymentStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { paymentStatus } = req.body;
+
+    const validStatus = ["Pending", "Paid"];
+
+    if (!validStatus.includes(paymentStatus))
+      return res.status(400).json({
+        success: false,
+        message: "Invalid payment status",
+      });
+
+    const purchase = await PurchaseInvoice.findById(id);
+
+    if (!purchase)
+      return res.status(404).json({
+        success: false,
+        message: "Purchase invoice not found",
+      });
+
+    purchase.paymentStatus = paymentStatus;
+
+    await purchase.save();
+
+    res.json({
+      success: true,
+      message: "Payment status updated",
+      data: purchase,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
     });
   }
 };

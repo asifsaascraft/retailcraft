@@ -91,11 +91,6 @@ const PurchaseInvoiceSchema = new mongoose.Schema(
       required: true,
     },
 
-    reverseCharge: {
-      type: String,
-      required: true,
-    },
-
     items: [PurchaseItemSchema],
 
     subTotal: {
@@ -141,6 +136,20 @@ const PurchaseInvoiceSchema = new mongoose.Schema(
       type: String,
       enum: ["Draft", "Completed"],
       default: "Draft",
+    },
+
+    paymentMode: {
+      type: String,
+      enum: ["UPI", "Debit/Credit Card", "Cash", "Pay Later"],
+    },
+    remarks: {
+      type: String,
+    },
+
+    paymentStatus: {
+      type: String,
+      enum: ["Pending", "Paid"],
+      default: "Pending",
     },
   },
   { timestamps: true },

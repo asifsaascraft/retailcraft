@@ -9,6 +9,7 @@ import {
   completePurchaseInvoice,
   deletePurchaseInvoice,
   getCompletedPurchaseInvoices,
+  updatePurchasePaymentStatus,
 } from "../controllers/purchaseInvoiceController.js";
 
 import { protectUser } from "../middlewares/userAuth.js";
@@ -28,6 +29,8 @@ router.put("/update-quantity", updatePurchaseProductQuantity);
 router.get("/complete/all", getCompletedPurchaseInvoices);
 
 router.post("/complete/:id", completePurchaseInvoice);
+
+router.put("/payment-status/:id", updatePurchasePaymentStatus);
 
 router.get("/:id", getPurchaseInvoiceById);
 

@@ -47,9 +47,8 @@ const BillingItemSchema = new mongoose.Schema(
       required: true,
     },
   },
-  { _id: false }
+  { _id: false },
 );
-
 
 /* ======================================================
    Billing Schema
@@ -133,10 +132,16 @@ const BillingSchema = new mongoose.Schema(
     },
     remarks: {
       type: String,
-    }
+    },
+
+    paymentStatus: {
+      type: String,
+      enum: ["Pending", "Paid"],
+      default: "Pending",
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.models.Billing ||
-mongoose.model("Billing", BillingSchema);
+  mongoose.model("Billing", BillingSchema);

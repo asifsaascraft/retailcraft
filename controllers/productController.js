@@ -79,6 +79,12 @@ export const createProduct = async (req, res) => {
         message: "Barcode is required",
       });
 
+    if (!/^\d+$/.test(barCode))
+      return res.status(400).json({
+        success: false,
+        message: "Barcode must contain only numbers",
+      });
+
     if (!color)
       return res.status(400).json({
         success: false,
@@ -89,33 +95,6 @@ export const createProduct = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Size is required",
-      });
-
-    const validSizes = [
-      "XXXS",
-      "XXS",
-      "XS",
-      "S",
-      "M",
-      "L",
-      "XL",
-      "XXL",
-      "XXXL",
-      "4XL",
-      "5XL",
-      "6XL",
-      "7XL",
-      "8XL",
-      "9XL",
-      "10XL",
-      "FREE",
-      "CUSTOM",
-    ];
-
-    if (!validSizes.includes(size))
-      return res.status(400).json({
-        success: false,
-        message: "Invalid size value",
       });
 
     /* =============================
@@ -354,6 +333,12 @@ export const updateProduct = async (req, res) => {
         message: "HSN code cannot be empty",
       });
 
+    if (req.body.barCode && !/^\d+$/.test(req.body.barCode))
+      return res.status(400).json({
+        success: false,
+        message: "Barcode must contain only numbers",
+      });
+
     Object.assign(product, req.body);
 
     await product.save();
@@ -576,7 +561,7 @@ export const searchProducts = async (req, res) => {
       $or: [
         { productName: { $regex: search, $options: "i" } },
         { barCode: { $regex: search, $options: "i" } },
-        { itemCode: { $regex: search, $options: "i" } }, 
+        { itemCode: { $regex: search, $options: "i" } },
       ],
     }).sort({ createdAt: -1 });
 
