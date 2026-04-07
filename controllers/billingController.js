@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Billing from "../models/Billing.js";
 import Product from "../models/Product.js";
 import Customer from "../models/Customer.js";
+import sendBillingSMS from "../utils/sendBillingSMS.js";
 
 /* ======================================================
    Generate Invoice Number
@@ -444,6 +445,25 @@ export const completeBilling = async (req, res) => {
     billing.paymentStatus = paymentMode === "Pay Later" ? "Pending" : "Paid";
 
     await billing.save();
+
+    /* =========================
+   SEND SMS TO CUSTOMER
+========================= */
+
+    try {
+      const customer = await Customer.findById(billing.customerId);
+
+      if (customer?.mobile) {
+        await sendBillingSMS(
+          customer.mobile,
+          billing.invoiceNumber,
+          billing.finalTotal,
+        );
+      }
+    } catch (smsError) {
+      console.error("SMS Failed:", smsError.message);
+      // don't fail API if SMS fails
+    }
 
     res.json({
       success: true,
