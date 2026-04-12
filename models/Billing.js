@@ -16,6 +16,11 @@ const BillingItemSchema = new mongoose.Schema(
       required: true,
     },
 
+    itemCode: {
+      type: String,
+      required: true,
+    },
+
     barCode: {
       type: String,
       required: true,

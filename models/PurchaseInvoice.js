@@ -17,6 +17,11 @@ const PurchaseItemSchema = new mongoose.Schema(
       required: true,
     },
 
+    itemCode: {
+      type: String,
+      required: true,
+    },
+
     barCode: {
       type: String,
       required: true,
@@ -76,6 +81,12 @@ const PurchaseInvoiceSchema = new mongoose.Schema(
     },
 
     invoiceNumber: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+
+    referenceInvoiceNumber: {
       type: String,
       required: true,
       unique: true,

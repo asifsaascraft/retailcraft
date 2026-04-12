@@ -3,6 +3,29 @@ import PurchaseInvoice from "../models/PurchaseInvoice.js";
 import Supplier from "../models/Supplier.js";
 import Product from "../models/Product.js";
 
+
+/* ======================================================
+   Generate Reference Invoice Number
+====================================================== */
+const generateReferenceInvoiceNumber = async () => {
+  const lastPurchaseInvoice = await PurchaseInvoice.findOne({})
+    .sort({ createdAt: -1 })
+    .select("referenceInvoiceNumber");
+
+  let nextNumber = 1;
+
+  if (lastPurchaseInvoice?.referenceInvoiceNumber) {
+    const parts = lastPurchaseInvoice.referenceInvoiceNumber.split("/");
+    const lastSeq = parseInt(parts[3], 10);
+
+    if (!isNaN(lastSeq)) {
+      nextNumber = lastSeq + 1;
+    }
+  }
+
+  return `INV/VMN/${String(nextNumber).padStart(3, "0")}`;
+};
+
 /* ======================================================
    Create Purchase Invoice
 ====================================================== */
@@ -94,7 +117,8 @@ export const createPurchaseInvoice = async (req, res) => {
       branchId,
       supplierId,
 
-      invoiceNumber,
+      invoiceNumber, // supplier's invoice number
+      referenceInvoiceNumber: await generateReferenceInvoiceNumber(),
       invoiceDate,
       placeOfSupply,
 
@@ -255,6 +279,7 @@ export const addProductByBarcode = async (req, res) => {
       purchase.items.push({
         productId: product._id,
         productName: product.productName,
+        itemCode: product.itemCode,  
         barCode: product.barCode,
 
         quantity: qty,

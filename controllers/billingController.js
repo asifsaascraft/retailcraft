@@ -7,8 +7,23 @@ import sendBillingSMS from "../utils/sendBillingSMS.js";
 /* ======================================================
    Generate Invoice Number
 ====================================================== */
-const generateInvoiceNumber = () => {
-  return "INV-" + Date.now();
+const generateInvoiceNumber = async () => {
+  const lastBilling = await Billing.findOne({})
+    .sort({ createdAt: -1 })
+    .select("invoiceNumber");
+
+  let nextNumber = 1;
+
+  if (lastBilling?.invoiceNumber) {
+    const parts = lastBilling.invoiceNumber.split("/");
+    const lastSeq = parseInt(parts[3], 10);
+
+    if (!isNaN(lastSeq)) {
+      nextNumber = lastSeq + 1;
+    }
+  }
+
+  return `INV/VMN/CUS/${String(nextNumber).padStart(3, "0")}`;
 };
 
 /* ======================================================
@@ -39,7 +54,7 @@ export const createBilling = async (req, res) => {
       branchId,
       customerId,
 
-      invoiceNumber: generateInvoiceNumber(),
+      invoiceNumber: await generateInvoiceNumber(),
 
       items: [],
       subTotal: 0,
@@ -232,6 +247,7 @@ export const addProductByBarcode = async (req, res) => {
       billing.items.push({
         productId: product._id,
         productName: product.productName,
+        itemCode: product.itemCode, 
         barCode: product.barCode,
 
         quantity: qty,
