@@ -10,6 +10,7 @@ import {
   getLowStock,
   getStockSummary,
   searchProducts,
+  exportProductsCSV,
 } from "../controllers/productController.js";
 
 import { protectUser } from "../middlewares/userAuth.js";
@@ -40,6 +41,7 @@ GET /products?status=All
 
 // Product
 router.get("/search", searchProducts);
+router.get("/export/csv", exportProductsCSV);
 router.get("/", getAllProductsWithStatus);
 router.post("/", createProduct);
 router.get("/:id", getProductById);

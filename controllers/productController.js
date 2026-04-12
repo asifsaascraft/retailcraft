@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import Product from "../models/Product.js";
+import { Parser } from "json2csv";
 
 /* ======================================================
    Helper: Format Errors
@@ -572,6 +573,73 @@ export const searchProducts = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+/* ======================================================
+   EXPORT PRODUCTS CSV
+====================================================== */
+export const exportProductsCSV = async (req, res) => {
+  try {
+    const branchId = req.user.branchId;
+
+    const products = await Product.find({ branchId })
+      .sort({ createdAt: -1 });
+
+    if (!products.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No products found",
+      });
+    }
+
+    const data = products.map((product) => ({
+      productName: product.productName,
+      itemCode: product.itemCode,
+      barCode: product.barCode,
+      color: product.color,
+      size: product.size,
+      quantity: product.quantity,
+      hsnCode: product.hsnCode,
+      salesTax: product.salesTax,
+      purchaseTax: product.purchaseTax,
+      b2bSalePrice: product.b2bSalePrice,
+      b2cSalePrice: product.b2cSalePrice,
+      purchasePrice: product.purchasePrice,
+      status: product.status,
+      createdAt: new Date(product.createdAt).toLocaleString(),
+    }));
+
+    const fields = [
+      { label: "Product Name", value: "productName" },
+      { label: "Item Code", value: "itemCode" },
+      { label: "Barcode", value: "barCode" },
+      { label: "Color", value: "color" },
+      { label: "Size", value: "size" },
+      { label: "Quantity", value: "quantity" },
+      { label: "HSN Code", value: "hsnCode" },
+      { label: "Sales Tax (%)", value: "salesTax" },
+      { label: "Purchase Tax (%)", value: "purchaseTax" },
+      { label: "B2B Sale Price", value: "b2bSalePrice" },
+      { label: "B2C Sale Price", value: "b2cSalePrice" },
+      { label: "Purchase Price", value: "purchasePrice" },
+      { label: "Status", value: "status" },
+      { label: "Created At", value: "createdAt" },
+    ];
+
+    const parser = new Parser({ fields });
+    const csv = parser.parse(data);
+
+    res.header("Content-Type", "text/csv");
+    res.attachment("products.csv");
+
+    return res.status(200).send(csv);
+
+  } catch (error) {
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
