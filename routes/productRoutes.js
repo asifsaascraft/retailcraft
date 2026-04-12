@@ -23,8 +23,6 @@ All routes below require logged-in USER authentication
 Branch is automatically detected from logged-in user
 =========================================================
 */
-//Public csv
-router.get("/export/csv", exportProductsCSV);
 
 router.use(protectUser);
 
@@ -43,6 +41,7 @@ GET /products?status=All
 
 // Product
 router.get("/search", searchProducts);
+router.get("/export/csv", exportProductsCSV);
 router.get("/", getAllProductsWithStatus);
 router.post("/", createProduct);
 router.get("/:id", getProductById);
