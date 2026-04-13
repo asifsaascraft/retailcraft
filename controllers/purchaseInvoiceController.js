@@ -16,7 +16,7 @@ const generateReferenceInvoiceNumber = async () => {
 
   if (lastPurchaseInvoice?.referenceInvoiceNumber) {
     const parts = lastPurchaseInvoice.referenceInvoiceNumber.split("/");
-    const lastSeq = parseInt(parts[3], 10);
+    const lastSeq = parseInt(parts[2], 10);
 
     if (!isNaN(lastSeq)) {
       nextNumber = lastSeq + 1;
