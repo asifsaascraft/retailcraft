@@ -16,6 +16,7 @@ import productRoutes from "./routes/productRoutes.js";
 import billingRoutes from "./routes/billingRoutes.js";
 import supplierRoutes from "./routes/supplierRoutes.js";
 import purchaseInvoiceRoutes from "./routes/purchaseInvoiceRoutes.js";
+import dashboardRoutes from "./routes/dashboardRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 
 
@@ -77,6 +78,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/billing", billingRoutes);
 app.use("/api/suppliers", supplierRoutes);
 app.use("/api/purchase-invoice", purchaseInvoiceRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 
 app.use("/api", userRoutes);

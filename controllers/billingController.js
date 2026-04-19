@@ -241,13 +241,25 @@ export const addProductByBarcode = async (req, res) => {
       billing.subTotal += newBaseAmount;
       billing.totalTax += newTaxAmount;
       billing.grandTotal += newTotalAmount;
+
+      const difference = qty;
+
+      if (product.quantity < difference) {
+        return res.status(400).json({
+          success: false,
+          message: "Not enough stock available",
+        });
+      }
+
+      product.quantity -= difference;
+      await product.save();
     } else {
       /* ADD NEW PRODUCT */
 
       billing.items.push({
         productId: product._id,
         productName: product.productName,
-        itemCode: product.itemCode, 
+        itemCode: product.itemCode,
         barCode: product.barCode,
 
         quantity: qty,
@@ -263,19 +275,20 @@ export const addProductByBarcode = async (req, res) => {
       billing.subTotal += baseAmount;
       billing.totalTax += taxAmount;
       billing.grandTotal += totalAmount;
+
+      if (product.quantity < qty) {
+        return res.status(400).json({
+          success: false,
+          message: "Not enough stock available",
+        });
+      }
+
+      product.quantity -= qty;
+      await product.save();
     }
 
-    /* SAVE BILLING */
     await billing.save();
-
-    /* =============================
-       REDUCE PRODUCT STOCK
-    ============================== */
-
-    product.quantity -= qty;
-
-    await product.save();
-
+    
     res.json({
       success: true,
       message: "Product added",
