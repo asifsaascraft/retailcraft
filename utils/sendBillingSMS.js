@@ -16,15 +16,8 @@ const sendBillingSMS = async (mobile, name, invoiceNumber, finalTotal, invoiceUr
       EntityId: process.env.SMS_GATEWAY_ENTITY_ID,
       dlttemplateid: process.env.SMS_GATEWAY_TEMPLATE_ID,
     };
-    console.log("SMS PARAMS:", {
-      number: mobile,
-      text: message,
-    });
 
     const response = await axios.get(process.env.SMS_GATEWAY_URL, { params });
-
-    console.log("SMS RESPONSE:", response.data); // ✅ ADD THIS
-
 
     return response.data;
   } catch (error) {
