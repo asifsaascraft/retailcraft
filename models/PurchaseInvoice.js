@@ -89,6 +89,7 @@ const PurchaseInvoiceSchema = new mongoose.Schema(
     referenceInvoiceNumber: {
       type: String,
       unique: true,
+      sparse: true,
     },
 
     invoiceDate: {
